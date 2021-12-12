@@ -7,7 +7,7 @@ import {
   RightTwo,
   Pic,
 } from "@icon-park/react";
-import type { IconProps } from "./type";
+import type { IconProps, IconList } from "./type";
 
 export const iconProps: IconProps = {
   theme: "outline",
@@ -15,12 +15,33 @@ export const iconProps: IconProps = {
   fill: "#333",
 };
 
-export const iconList = [
-  Click,
-  RectangleOne,
-  Round,
-  DiamondThree,
-  FontSizeTwo,
-  RightTwo,
-  Pic,
+export const iconList: IconList = [
+  {
+    type: "selection",
+    Icon: Click,
+  },
+  {
+    type: "rectangle",
+    Icon: RectangleOne,
+  },
+  {
+    type: "circle",
+    Icon: Round,
+  },
+  {
+    type: "diamond",
+    Icon: DiamondThree,
+  },
+  {
+    type: "text",
+    Icon: FontSizeTwo,
+  },
+  {
+    type: "arrow",
+    Icon: RightTwo,
+  },
+  {
+    type: "image",
+    Icon: Pic,
+  },
 ];

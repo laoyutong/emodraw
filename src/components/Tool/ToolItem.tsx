@@ -5,14 +5,14 @@ import style from "./style.module.less";
 interface ToolItemProps {
   Icon: ReactNode;
   index: number;
-  changeIndex: (index: number) => void;
+  changeType: () => void;
   isActive: boolean;
 }
 
 const ToolItem = ({
   Icon,
   index,
-  changeIndex,
+  changeType,
   isActive,
 }: ToolItemProps): JSX.Element => {
   return (
@@ -20,7 +20,7 @@ const ToolItem = ({
       className={classnames(style["tool-item"], {
         [style["active"]]: isActive,
       })}
-      onClick={() => changeIndex(index)}
+      onClick={changeType}
     >
       <div className={style["tool-icon"]}>{Icon}</div>
       <div className={style["tool-index"]}>{index}</div>

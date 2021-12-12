@@ -1,28 +1,29 @@
-import { useState } from "react";
+import { useContext } from "react";
 import { iconList, iconProps } from "./config";
 import ToolItem from "./ToolItem";
 import { useKeydown } from "@/hooks";
+import { drawTypeContext } from "@/context/DrawTypeContext";
 import style from "./style.module.less";
 
 const Tool = (): JSX.Element => {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const { drawType, setDrawType } = useContext(drawTypeContext);
 
   useKeydown((key) => {
-    const index = +key;
+    const index = +key - 1;
     if (!isNaN(index) && index < iconList.length) {
-      setActiveIndex(index);
+      setDrawType(iconList[index].type);
     }
   });
 
   return (
     <div className={style["container"]}>
-      {iconList.map((Icon, index) => (
+      {iconList.map(({ Icon, type }, index) => (
         <ToolItem
-          isActive={index === activeIndex}
+          isActive={type === drawType}
           key={index}
           Icon={<Icon {...iconProps} />}
-          index={index}
-          changeIndex={setActiveIndex}
+          index={index + 1}
+          changeType={() => setDrawType(type)}
         />
       ))}
     </div>
