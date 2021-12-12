@@ -14,6 +14,7 @@ export const iconProps: IconProps = {
   size: "20",
   fill: "#333",
 };
+
 export const iconList = [
   Click,
   RectangleOne,
