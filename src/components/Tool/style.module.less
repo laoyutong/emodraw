@@ -1,0 +1,36 @@
+.container {
+  display: flex;
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translate3d(-50%, 0, 0);
+  border-radius: 5px;
+  padding: 5px;
+  background: hsla(0, 0%, 100%, 0.96);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+}
+
+.tool-item {
+  width: 40px;
+  height: 40px;
+  background-color: rgb(233, 236, 239);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin: 0 4px;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover,
+  &.active {
+    background: #ced4da;
+  }
+
+  .tool-index {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    font-size: 12px;
+  }
+}
