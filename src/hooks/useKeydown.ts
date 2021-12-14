@@ -2,11 +2,11 @@ import { useEffect } from "react";
 
 const useKeydown = (callback: (key: string) => void) => {
   useEffect(() => {
-    const keyDownFn = (e: KeyboardEvent) => {
+    const keydownFn = (e: KeyboardEvent) => {
       callback(e.key);
     };
-    document.addEventListener("keydown", keyDownFn);
-    return () => document.removeEventListener("keydown", keyDownFn);
+    document.addEventListener("keydown", keydownFn);
+    return () => document.removeEventListener("keydown", keydownFn);
   }, []);
 };
 

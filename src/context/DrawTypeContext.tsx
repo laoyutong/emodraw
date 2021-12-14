@@ -1,8 +1,13 @@
 import { createContext, ReactNode, useState } from "react";
-import type { DrawTypeContextValue } from "./type";
+import type { DrawType } from "@/type";
 
 interface DrawTypeContextProps {
   children: ReactNode;
+}
+
+interface DrawTypeContextValue {
+  drawType: DrawType;
+  setDrawType: (type: DrawType) => void;
 }
 
 export const drawTypeContext = createContext<DrawTypeContextValue>(
@@ -10,8 +15,7 @@ export const drawTypeContext = createContext<DrawTypeContextValue>(
 );
 
 const DrawTypeContext = ({ children }: DrawTypeContextProps): JSX.Element => {
-  const [drawType, setDrawType] =
-    useState<DrawTypeContextValue["drawType"]>("selection");
+  const [drawType, setDrawType] = useState<DrawType>("selection");
 
   return (
     <drawTypeContext.Provider value={{ drawType, setDrawType }}>

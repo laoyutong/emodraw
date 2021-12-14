@@ -16,32 +16,11 @@ export const iconProps: IconProps = {
 };
 
 export const iconList: IconList = [
-  {
-    type: "selection",
-    Icon: Click,
-  },
-  {
-    type: "rectangle",
-    Icon: RectangleOne,
-  },
-  {
-    type: "circle",
-    Icon: Round,
-  },
-  {
-    type: "diamond",
-    Icon: DiamondThree,
-  },
-  {
-    type: "text",
-    Icon: FontSizeTwo,
-  },
-  {
-    type: "arrow",
-    Icon: RightTwo,
-  },
-  {
-    type: "image",
-    Icon: Pic,
-  },
+  { type: "selection", Icon: Click },
+  { type: "rectangle", Icon: RectangleOne },
+  { type: "circle", Icon: Round },
+  { type: "diamond", Icon: DiamondThree },
+  { type: "text", Icon: FontSizeTwo },
+  { type: "arrow", Icon: RightTwo },
+  { type: "image", Icon: Pic },
 ];
