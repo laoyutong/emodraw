@@ -1,9 +1,9 @@
 import { RefObject, useContext, useEffect, useRef } from "react";
-import { useDrawData } from "./";
+import { useDrawData, useKeydown } from "./";
 import { nanoid } from "nanoid";
 import { drawCanvas } from "@/util";
 import { drawTypeContext } from "@/context/DrawTypeContext";
-import type { Coordinate, DrawData } from "@/type";
+import type { Coordinate } from "@/type";
 
 const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const { drawType } = useContext(drawTypeContext);
@@ -12,14 +12,22 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const [drawData, { addDrawData, revokeDrawData, storageDrawData }] =
     useDrawData();
 
-  useEffect(() => {
-    resetCanvas();
-  }, []);
-
   const resetCanvas = () => {
     canvasCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
     drawData.current && drawCanvas(canvasCtx, drawData.current);
   };
+
+  useEffect(() => {
+    resetCanvas();
+  }, []);
+
+  useKeydown((key, metaKey) => {
+    if (metaKey && key === "z") {
+      revokeDrawData();
+      storageDrawData();
+      resetCanvas();
+    }
+  });
 
   useEffect(() => {
     const mousedownFn = (e: MouseEvent) => {
