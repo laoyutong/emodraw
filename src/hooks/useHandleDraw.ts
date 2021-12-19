@@ -1,20 +1,19 @@
 import { RefObject, useContext, useEffect, useRef } from "react";
-import { useDrawData, useKeydown } from "./";
 import { nanoid } from "nanoid";
-import { drawCanvas } from "@/util";
+
+import { useKeydown } from "./";
 import { drawTypeContext } from "@/context/DrawTypeContext";
+import { drawCanvas, history, createTextArea } from "@/util";
 import type { Coordinate } from "@/type";
 
 const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const { drawType } = useContext(drawTypeContext);
   const canMousemove = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
-  const [drawData, { addDrawData, revokeDrawData, storageDrawData }] =
-    useDrawData();
 
   const resetCanvas = () => {
     canvasCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    drawData.current && drawCanvas(canvasCtx, drawData.current);
+    canvasCtx.current && drawCanvas(canvasCtx.current, history.data);
   };
 
   useEffect(() => {
@@ -23,25 +22,41 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
 
   useKeydown((key, metaKey) => {
     if (metaKey && key === "z") {
-      revokeDrawData();
-      storageDrawData();
+      history.revokeDrawData();
+      history.storageDrawData();
       resetCanvas();
     }
   });
 
   useEffect(() => {
     const mousedownFn = (e: MouseEvent) => {
-      canMousemove.current = true;
       const { offsetX, offsetY } = e;
       coordinate.current = { x: offsetX, y: offsetY };
-      addDrawData({
-        type: drawType,
-        id: nanoid(),
-        x: offsetX,
-        y: offsetY,
-        width: 0,
-        height: 0,
-      });
+      if (drawType === "text") {
+        createTextArea(coordinate.current, (v) => {
+          if (v.trim()) {
+            history.addDrawData({
+              type: drawType,
+              id: nanoid(),
+              x: offsetX,
+              y: offsetY,
+              content: v,
+            });
+            history.storageDrawData();
+            resetCanvas();
+          }
+        });
+      } else {
+        canMousemove.current = true;
+        history.addDrawData({
+          type: drawType,
+          id: nanoid(),
+          x: offsetX,
+          y: offsetY,
+          width: 0,
+          height: 0,
+        });
+      }
     };
     document.addEventListener("mousedown", mousedownFn);
     return () => document.removeEventListener("mousedown", mousedownFn);
@@ -49,14 +64,16 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
 
   useEffect(() => {
     const mousemoveFn = (e: MouseEvent) => {
-      if (!canMousemove.current || !drawData.current) {
+      if (!canMousemove.current) {
         return;
       }
+      const activeDrawData = history.data[history.data.length - 1];
       const { offsetX, offsetY } = e;
-      drawData.current[drawData.current.length - 1].width =
-        offsetX - coordinate.current.x;
-      drawData.current[drawData.current.length - 1].height =
-        offsetY - coordinate.current.y;
+      if (activeDrawData.type === "text") {
+      } else {
+        activeDrawData.width = offsetX - coordinate.current.x;
+        activeDrawData.height = offsetY - coordinate.current.y;
+      }
       resetCanvas();
     };
     document.addEventListener("mousemove", mousemoveFn);
@@ -65,14 +82,17 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
 
   useEffect(() => {
     const mouseupFn = (e: MouseEvent) => {
+      if (!canMousemove.current) {
+        return;
+      }
       canMousemove.current = false;
       if (
         e.offsetX === coordinate.current.x &&
         e.offsetY === coordinate.current.y
       ) {
-        revokeDrawData();
+        history.revokeDrawData();
       }
-      storageDrawData();
+      history.storageDrawData();
     };
     document.addEventListener("mouseup", mouseupFn);
     return () => document.removeEventListener("mouseup", mouseupFn);

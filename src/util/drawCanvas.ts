@@ -1,5 +1,5 @@
-import { RefObject } from "react";
-import { DrawData } from "@/type";
+import type { DrawData, GraghDrawData, TextDrawData } from "@/type";
+import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from "@/config";
 
 const drawEllipse = (
   ctx: CanvasRenderingContext2D,
@@ -34,30 +34,52 @@ const drawDiamond = (
   ctx.stroke();
 };
 
+const drawGragh = (
+  canvasCtx: CanvasRenderingContext2D,
+  drawData: GraghDrawData
+) => {
+  const { type, x, y, width, height } = drawData;
+  switch (type) {
+    case "rectangle":
+      canvasCtx.strokeRect(x, y, width, height);
+      return;
+    case "circle":
+      drawEllipse(
+        canvasCtx,
+        x + width / 2,
+        y + height / 2,
+        Math.abs(width / 2),
+        Math.abs(height / 2)
+      );
+      return;
+    case "diamond":
+      drawDiamond(canvasCtx, x, y, width, height);
+      return;
+  }
+};
+
+const drawText = (
+  canvasCtx: CanvasRenderingContext2D,
+  drawData: TextDrawData
+) => {
+  const { content, x, y } = drawData;
+  const lines = content.replace(/\r\n?/g, "\n").split("\n");
+  canvasCtx.textBaseline = "bottom";
+  canvasCtx.font = `${DEFAULT_FONT_SIZE}px  ${DEFAULT_FONT_FAMILY}`;
+  lines.forEach((line, index) => {
+    canvasCtx.fillText(line, x, y + DEFAULT_FONT_SIZE * (index + 1));
+  });
+};
+
 const drawCanvas = (
-  canvasCtx: RefObject<CanvasRenderingContext2D>,
+  canvasCtx: CanvasRenderingContext2D,
   drawData: DrawData[]
 ) => {
-  drawData.forEach(({ type, x, y, width, height }) => {
-    if (!canvasCtx.current) {
-      return;
-    }
-    switch (type) {
-      case "rectangle":
-        canvasCtx.current.strokeRect(x, y, width, height);
-        return;
-      case "circle":
-        drawEllipse(
-          canvasCtx.current,
-          x + width / 2,
-          y + height / 2,
-          Math.abs(width / 2),
-          Math.abs(height / 2)
-        );
-        return;
-      case "diamond":
-        drawDiamond(canvasCtx.current, x, y, width, height);
-        return;
+  drawData.forEach((data) => {
+    if (data.type === "text") {
+      drawText(canvasCtx, data);
+    } else {
+      drawGragh(canvasCtx, data);
     }
   });
 };
