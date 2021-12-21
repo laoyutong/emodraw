@@ -13,3 +13,5 @@ export const CURSOR_CONFIG = {
   ewResize: "ew-resize",
   nsResize: "ns-resize",
 } as const;
+
+export const ARROW_LENGTH = 30;

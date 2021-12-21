@@ -6,6 +6,7 @@ import {
   FontSizeTwo,
   RightTwo,
   Pic,
+  ArrowRight,
   Edit,
 } from "@icon-park/react";
 import type { IconProps, IconList } from "./type";
@@ -22,6 +23,7 @@ export const iconList: IconList = [
   { type: "circle", Icon: Round },
   { type: "diamond", Icon: DiamondThree },
   { type: "text", Icon: FontSizeTwo },
+  { type: "arrow", Icon: ArrowRight },
 
   // { type: "arrow", Icon: RightTwo },
   // { type: "image", Icon: Pic },

@@ -2,7 +2,7 @@ export type DrawType =
   // | "selection"
   | "rectangle"
   | "circle"
-  // | "arrow"
+  | "arrow"
   // | "image"
   | "text"
   | "diamond";
@@ -23,7 +23,7 @@ export interface TextDrawData extends BaseDrawData {
 }
 
 export interface GraghDrawData extends BaseDrawData {
-  type: "rectangle" | "circle" | "diamond";
+  type: "rectangle" | "circle" | "diamond" | "arrow";
   width: number;
   height: number;
 }

@@ -1,5 +1,6 @@
-import type { DrawData, GraghDrawData, TextDrawData } from "@/type";
-import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from "@/config";
+import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, ARROW_LENGTH } from "@/config";
+import { history } from "@/util";
+import type { GraghDrawData, TextDrawData } from "@/type";
 
 const drawEllipse = (
   ctx: CanvasRenderingContext2D,
@@ -34,6 +35,42 @@ const drawDiamond = (
   ctx.stroke();
 };
 
+const getAngle = (x: number, y: number) =>
+  Math.floor(180 / (Math.PI / Math.atan(x / y)));
+
+const drawArrow = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) => {
+  const arrowLength = Math.min(
+    Math.pow(width * width + height * height, 1 / 2) / 2,
+    ARROW_LENGTH
+  );
+  const directionLength = height < 0 ? -arrowLength : arrowLength;
+
+  const angle = getAngle(width, height);
+  const angleA = angle + 23;
+  const angleB = angle - 27;
+  const targetX = x + width;
+  const targetY = y + height;
+
+  const x1 = targetX - directionLength * Math.sin((Math.PI * angleA) / 180);
+  const y1 = targetY - directionLength * Math.cos((Math.PI * angleA) / 180);
+  const x2 = targetX - directionLength * Math.sin((Math.PI * angleB) / 180);
+  const y2 = targetY - directionLength * Math.cos((Math.PI * angleB) / 180);
+
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(targetX, targetY);
+  ctx.lineTo(x1, y1);
+  ctx.moveTo(targetX, targetY);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+};
+
 const drawGragh = (
   canvasCtx: CanvasRenderingContext2D,
   drawData: GraghDrawData
@@ -51,6 +88,9 @@ const drawGragh = (
         Math.abs(width / 2),
         Math.abs(height / 2)
       );
+      return;
+    case "arrow":
+      drawArrow(canvasCtx, x, y, width, height);
       return;
     case "diamond":
       drawDiamond(canvasCtx, x, y, width, height);
@@ -71,11 +111,8 @@ const drawText = (
   });
 };
 
-const drawCanvas = (
-  canvasCtx: CanvasRenderingContext2D,
-  drawData: DrawData[]
-) => {
-  drawData.forEach((data) => {
+const drawCanvas = (canvasCtx: CanvasRenderingContext2D) => {
+  history.data.forEach((data) => {
     if (data.type === "text") {
       drawText(canvasCtx, data);
     } else {

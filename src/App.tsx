@@ -11,8 +11,8 @@ function App(): JSX.Element {
     }
   }, []);
 
-  useResizeCanvas(canvasIns);
   useHandleDraw(canvasCtx);
+  useResizeCanvas(canvasIns, canvasCtx);
 
   return (
     <div className="App" style={{ position: "relative" }}>

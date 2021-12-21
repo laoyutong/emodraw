@@ -13,12 +13,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
 
   const resetCanvas = () => {
     canvasCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    canvasCtx.current && drawCanvas(canvasCtx.current, history.data);
+    canvasCtx.current && drawCanvas(canvasCtx.current);
   };
-
-  useEffect(() => {
-    resetCanvas();
-  }, []);
 
   useKeydown((key, metaKey) => {
     if (metaKey && key === "z") {
