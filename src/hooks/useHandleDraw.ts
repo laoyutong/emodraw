@@ -3,17 +3,26 @@ import { nanoid } from "nanoid";
 
 import { useKeydown } from "./";
 import { drawTypeContext } from "@/context/DrawTypeContext";
-import { drawCanvas, history, createTextArea } from "@/util";
+import { DEFAULT_FONT_SIZE } from "@/config";
+import {
+  drawCanvas,
+  history,
+  createTextArea,
+  checkPoint,
+  splitContent,
+} from "@/util";
 import type { Coordinate } from "@/type";
 
 const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
-  const { drawType } = useContext(drawTypeContext);
+  const { drawType, setDrawType } = useContext(drawTypeContext);
   const canMousemove = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
 
   const resetCanvas = () => {
-    canvasCtx.current?.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    canvasCtx.current && drawCanvas(canvasCtx.current);
+    if (canvasCtx.current) {
+      canvasCtx.current.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      drawCanvas(canvasCtx.current);
+    }
   };
 
   useKeydown((key, metaKey) => {
@@ -29,19 +38,33 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       const { offsetX, offsetY } = e;
       coordinate.current = { x: offsetX, y: offsetY };
       if (drawType === "text") {
+        setDrawType("selection");
         createTextArea(coordinate.current, (v) => {
           if (v.trim()) {
+            const lines = splitContent(v);
+            let maxWidth = 0;
+            lines.forEach((line) => {
+              if (canvasCtx.current) {
+                const { width } = canvasCtx.current.measureText(line);
+                if (width > maxWidth) {
+                  maxWidth = width;
+                }
+              }
+            });
             history.addDrawData({
               type: drawType,
               id: nanoid(),
               x: offsetX,
               y: offsetY,
               content: v,
+              width: Math.floor(maxWidth),
+              height: lines.length * DEFAULT_FONT_SIZE,
             });
             history.storageDrawData();
             resetCanvas();
           }
         });
+      } else if (drawType === "selection") {
       } else {
         canMousemove.current = true;
         history.addDrawData({
@@ -60,13 +83,16 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
 
   useEffect(() => {
     const mousemoveFn = (e: MouseEvent) => {
+      const { offsetX, offsetY } = e;
       if (!canMousemove.current) {
+        checkPoint({
+          x: offsetX,
+          y: offsetY,
+        });
         return;
       }
       const activeDrawData = history.data[history.data.length - 1];
-      const { offsetX, offsetY } = e;
-      if (activeDrawData.type === "text") {
-      } else {
+      if (activeDrawData.type !== "text") {
         activeDrawData.width = offsetX - coordinate.current.x;
         activeDrawData.height = offsetY - coordinate.current.y;
       }
@@ -88,6 +114,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       ) {
         history.revokeDrawData();
       }
+      setDrawType("selection");
       history.storageDrawData();
     };
     document.addEventListener("mouseup", mouseupFn);

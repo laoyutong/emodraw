@@ -1,6 +1,22 @@
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, ARROW_LENGTH } from "@/config";
-import { history } from "@/util";
+import { history, splitContent } from "@/util";
 import type { GraghDrawData, TextDrawData } from "@/type";
+
+const drawRect = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) => {
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + width, y);
+  ctx.lineTo(x + width, y + height);
+  ctx.lineTo(x, y + height);
+  ctx.closePath();
+  ctx.stroke();
+};
 
 const drawEllipse = (
   ctx: CanvasRenderingContext2D,
@@ -78,7 +94,7 @@ const drawGragh = (
   const { type, x, y, width, height } = drawData;
   switch (type) {
     case "rectangle":
-      canvasCtx.strokeRect(x, y, width, height);
+      drawRect(canvasCtx, x, y, width, height);
       return;
     case "circle":
       drawEllipse(
@@ -103,10 +119,9 @@ const drawText = (
   drawData: TextDrawData
 ) => {
   const { content, x, y } = drawData;
-  const lines = content.replace(/\r\n?/g, "\n").split("\n");
   canvasCtx.textBaseline = "bottom";
   canvasCtx.font = `${DEFAULT_FONT_SIZE}px  ${DEFAULT_FONT_FAMILY}`;
-  lines.forEach((line, index) => {
+  splitContent(content).forEach((line, index) => {
     canvasCtx.fillText(line, x, y + DEFAULT_FONT_SIZE * (index + 1));
   });
 };

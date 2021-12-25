@@ -1,5 +1,5 @@
 export type DrawType =
-  // | "selection"
+  | "selection"
   | "rectangle"
   | "circle"
   | "arrow"
@@ -13,6 +13,8 @@ interface BaseDrawData {
   id: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
 }
 
 export type DrawData = TextDrawData | GraghDrawData;
@@ -24,6 +26,4 @@ export interface TextDrawData extends BaseDrawData {
 
 export interface GraghDrawData extends BaseDrawData {
   type: "rectangle" | "circle" | "diamond" | "arrow";
-  width: number;
-  height: number;
 }
