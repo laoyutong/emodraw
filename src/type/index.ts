@@ -15,6 +15,7 @@ interface BaseDrawData {
   y: number;
   width: number;
   height: number;
+  isSelected: boolean;
 }
 
 export type DrawData = TextDrawData | GraghDrawData;

@@ -19,7 +19,7 @@ const getDistance = (x1: number, x2: number, y1: number, y2: number) =>
     1 / 2
   );
 
-const checkPoint = ({ x, y }: Coordinate) => {
+const getSelectionElement = ({ x, y }: Coordinate): string | null => {
   for (let i = 0; i < history.data.length; i++) {
     const data = history.data[i];
     const x1 = data.x;
@@ -30,8 +30,9 @@ const checkPoint = ({ x, y }: Coordinate) => {
       case "text":
         if (isRange(x, x1, getBigX(x2)) && isRange(y, y1, getBigY(y2))) {
           console.log("text");
-          return true;
+          return data.id;
         }
+        return null;
       case "rectangle":
         if (
           ((isRange(x, x1, getBigX(x1)) || isRange(x, x2, getBigX(x2))) &&
@@ -40,8 +41,9 @@ const checkPoint = ({ x, y }: Coordinate) => {
             isRange(x, x1, getBigX(x2)))
         ) {
           console.log("rectangle");
-          return true;
+          return data.id;
         }
+        return null;
       case "diamond":
         const targetArea = data.width * data.height;
         const disX = Math.abs(x - (x1 + data.width / 2));
@@ -52,8 +54,9 @@ const checkPoint = ({ x, y }: Coordinate) => {
           ((disX - GAP) * data.height + (disY - GAP) * data.width) * 2;
         if (maxArea >= targetArea && minArea <= targetArea) {
           console.log("diamond");
-          return true;
+          return data.id;
         }
+        return null;
       case "circle":
         const centerX = x1 + data.width / 2;
         const centerY = y1 + data.height / 2;
@@ -65,9 +68,10 @@ const checkPoint = ({ x, y }: Coordinate) => {
           const y1 = Math.round(centerY + lengthY * Math.sin(i));
           if (isRange(x, x1, getBigX(x1)) && isRange(y, y1, getBigY(y1))) {
             console.log("circle");
-            return true;
+            return data.id;
           }
         }
+        return null;
       case "arrow":
         const target = Math.round(getDistance(x1, x2, y1, y2));
         const active = Math.round(
@@ -75,11 +79,12 @@ const checkPoint = ({ x, y }: Coordinate) => {
         );
         if (active >= target - GAP / 2 && active <= target + GAP / 2) {
           console.log("arrow");
-          return true;
+          return data.id;
         }
+        return null;
     }
   }
-  return false;
+  return null;
 };
 
-export default checkPoint;
+export default getSelectionElement;

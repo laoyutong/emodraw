@@ -8,7 +8,7 @@ import {
   drawCanvas,
   history,
   createTextArea,
-  checkPoint,
+  getSelectionElement,
   splitContent,
 } from "@/util";
 import type { Coordinate } from "@/type";
@@ -32,7 +32,29 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       history.storageDrawData();
       resetCanvas();
     }
+    if (key === "Backspace") {
+      history.delete();
+      resetCanvas();
+    }
   });
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      if (drawType !== "selection") {
+        return;
+      }
+      history.data.forEach((item) => (item.isSelected = false));
+      const { offsetX, offsetY } = e;
+      const id = getSelectionElement({ x: offsetX, y: offsetY });
+      if (id) {
+        history.data.find((item) => item.id === id)!.isSelected = true;
+        history.storageDrawData();
+      }
+      resetCanvas();
+    };
+    document.addEventListener("click", fn);
+    return () => document.removeEventListener("click", fn);
+  }, [drawType]);
 
   useEffect(() => {
     const mousedownFn = (e: MouseEvent) => {
@@ -60,6 +82,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
               content: v,
               width: Math.floor(maxWidth),
               height: lines.length * DEFAULT_FONT_SIZE,
+              isSelected: false,
             });
             history.storageDrawData();
             resetCanvas();
@@ -76,6 +99,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           y: offsetY,
           width: 0,
           height: 0,
+          isSelected: false,
         });
       }
     };
@@ -88,7 +112,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       const { offsetX, offsetY } = e;
       if (!canMousemove.current) {
         if (drawType === "selection") {
-          const result = checkPoint({
+          const result = getSelectionElement({
             x: offsetX,
             y: offsetY,
           });

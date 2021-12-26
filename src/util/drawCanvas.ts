@@ -1,6 +1,6 @@
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, ARROW_LENGTH } from "@/config";
 import { history, splitContent } from "@/util";
-import type { GraghDrawData, TextDrawData } from "@/type";
+import type { DrawData, GraghDrawData, TextDrawData } from "@/type";
 
 const drawRect = (
   ctx: CanvasRenderingContext2D,
@@ -128,8 +128,38 @@ const drawText = (
   });
 };
 
+const drawSelectedArea = (
+  ctx: CanvasRenderingContext2D,
+  { x, y, width, height }: DrawData
+) => {
+  const gapValue = 5;
+  const rectValue = 8;
+  const gapX = width > 0 ? gapValue : -gapValue;
+  const gapY = height > 0 ? gapValue : -gapValue;
+  const rectWidth = width > 0 ? rectValue : -rectValue;
+  const rectHeight = height > 0 ? rectValue : -rectValue;
+  const x1 = x - gapX;
+  const x2 = x + width + gapX;
+  const y1 = y - gapY;
+  const y2 = y + height + gapY;
+  ctx.setLineDash([15, 10]);
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y1);
+  ctx.lineTo(x2, y2);
+  ctx.lineTo(x1, y2);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.setLineDash([]);
+  drawRect(ctx, x1, y1, -rectWidth, -rectHeight);
+  drawRect(ctx, x2, y1, rectWidth, -rectHeight);
+  drawRect(ctx, x2, y2, rectWidth, rectHeight);
+  drawRect(ctx, x1, y2, -rectWidth, rectHeight);
+};
+
 const drawCanvas = (canvasCtx: CanvasRenderingContext2D) => {
   history.data.forEach((data) => {
+    data.isSelected && drawSelectedArea(canvasCtx, data);
     if (data.type === "text") {
       drawText(canvasCtx, data);
     } else {

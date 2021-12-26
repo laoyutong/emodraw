@@ -31,6 +31,11 @@ class History {
   storageDrawData() {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(this.data));
   }
+
+  delete() {
+    this.data = this.data.filter((item) => !item.isSelected);
+    this.storageDrawData();
+  }
 }
 
 export default new History();
