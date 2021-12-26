@@ -13,23 +13,26 @@ const getBigY = (y: number) =>
 
 const isRange = (v: number, s: number, b: number) => v >= getSmall(s) && v <= b;
 
+const getDistance = (x1: number, x2: number, y1: number, y2: number) =>
+  Math.pow(
+    Math.pow(Math.abs(x1 - x2), 2) + Math.pow(Math.abs(y1 - y2), 2),
+    1 / 2
+  );
+
 const checkPoint = ({ x, y }: Coordinate) => {
   for (let i = 0; i < history.data.length; i++) {
     const data = history.data[i];
+    const x1 = data.x;
+    const x2 = data.x + data.width;
+    const y1 = data.y;
+    const y2 = data.y + data.height;
     switch (data.type) {
       case "text":
-        if (
-          isRange(x, data.x, getBigX(data.x + data.width)) &&
-          isRange(y, data.y, getBigY(data.y + data.height))
-        ) {
+        if (isRange(x, x1, getBigX(x2)) && isRange(y, y1, getBigY(y2))) {
           console.log("text");
           return true;
         }
       case "rectangle":
-        const x1 = data.x;
-        const x2 = data.x + data.width;
-        const y1 = data.y;
-        const y2 = data.y + data.height;
         if (
           ((isRange(x, x1, getBigX(x1)) || isRange(x, x2, getBigX(x2))) &&
             isRange(y, y1, getBigY(y2))) ||
@@ -41,8 +44,8 @@ const checkPoint = ({ x, y }: Coordinate) => {
         }
       case "diamond":
         const targetArea = data.width * data.height;
-        const disX = Math.abs(x - (data.x + data.width / 2));
-        const disY = Math.abs(y - (data.y + data.height / 2));
+        const disX = Math.abs(x - (x1 + data.width / 2));
+        const disY = Math.abs(y - (y1 + data.height / 2));
         const maxArea =
           ((disX + GAP) * data.height + (disY + GAP) * data.width) * 2;
         const minArea =
@@ -52,8 +55,8 @@ const checkPoint = ({ x, y }: Coordinate) => {
           return true;
         }
       case "circle":
-        const centerX = data.x + data.width / 2;
-        const centerY = data.y + data.height / 2;
+        const centerX = x1 + data.width / 2;
+        const centerY = y1 + data.height / 2;
         const lengthX = Math.abs(data.width / 2);
         const lengthY = Math.abs(data.height / 2);
         const step = lengthX > lengthY ? 1 / lengthX : 1 / lengthY;
@@ -64,6 +67,15 @@ const checkPoint = ({ x, y }: Coordinate) => {
             console.log("circle");
             return true;
           }
+        }
+      case "arrow":
+        const target = Math.round(getDistance(x1, x2, y1, y2));
+        const active = Math.round(
+          getDistance(x, x1, y, y1) + getDistance(x, x2, y, y2)
+        );
+        if (active >= target - GAP / 2 && active <= target + GAP / 2) {
+          console.log("arrow");
+          return true;
         }
     }
   }

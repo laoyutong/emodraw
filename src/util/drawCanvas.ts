@@ -54,6 +54,8 @@ const drawDiamond = (
 const getAngle = (x: number, y: number) =>
   Math.floor(180 / (Math.PI / Math.atan(x / y)));
 
+const ARROW_DEG = 30;
+
 const drawArrow = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -68,8 +70,8 @@ const drawArrow = (
   const directionLength = height < 0 ? -arrowLength : arrowLength;
 
   const angle = getAngle(width, height);
-  const angleA = angle + 23;
-  const angleB = angle - 27;
+  const angleA = angle + ARROW_DEG;
+  const angleB = angle - ARROW_DEG;
   const targetX = x + width;
   const targetY = y + height;
 
