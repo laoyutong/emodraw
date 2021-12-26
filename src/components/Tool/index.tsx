@@ -1,12 +1,14 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { iconList, iconProps } from "./config";
 import ToolItem from "./ToolItem";
 import { useKeydown } from "@/hooks";
-import { drawTypeContext } from "@/context/DrawTypeContext";
+import { CURSOR_CONFIG } from "@/config";
+import { drawTypeContext, cursorTypeContext } from "@/context";
 import style from "./style.module.less";
 
 const Tool = (): JSX.Element => {
   const { drawType, setDrawType } = useContext(drawTypeContext);
+  const { setCursorType } = useContext(cursorTypeContext);
 
   useKeydown((key) => {
     const index = +key - 1;
@@ -14,6 +16,12 @@ const Tool = (): JSX.Element => {
       setDrawType(iconList[index].type);
     }
   });
+
+  useEffect(() => {
+    setCursorType(
+      drawType === "selection" ? CURSOR_CONFIG.default : CURSOR_CONFIG.crosshair
+    );
+  }, [drawType]);
 
   return (
     <div className={style["container"]}>

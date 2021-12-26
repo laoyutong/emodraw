@@ -2,8 +2,8 @@ import { RefObject, useContext, useEffect, useRef } from "react";
 import { nanoid } from "nanoid";
 
 import { useKeydown } from "./";
-import { drawTypeContext } from "@/context/DrawTypeContext";
-import { DEFAULT_FONT_SIZE } from "@/config";
+import { drawTypeContext, cursorTypeContext } from "@/context";
+import { CURSOR_CONFIG, DEFAULT_FONT_SIZE } from "@/config";
 import {
   drawCanvas,
   history,
@@ -15,6 +15,7 @@ import type { Coordinate } from "@/type";
 
 const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const { drawType, setDrawType } = useContext(drawTypeContext);
+  const { setCursorType } = useContext(cursorTypeContext);
   const canMousemove = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
 
@@ -65,6 +66,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           }
         });
       } else if (drawType === "selection") {
+        // todo
       } else {
         canMousemove.current = true;
         history.addDrawData({
@@ -85,10 +87,13 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     const mousemoveFn = (e: MouseEvent) => {
       const { offsetX, offsetY } = e;
       if (!canMousemove.current) {
-        checkPoint({
-          x: offsetX,
-          y: offsetY,
-        });
+        if (drawType === "selection") {
+          const result = checkPoint({
+            x: offsetX,
+            y: offsetY,
+          });
+          setCursorType(result ? CURSOR_CONFIG.move : CURSOR_CONFIG.default);
+        }
         return;
       }
       const activeDrawData = history.data[history.data.length - 1];
@@ -100,7 +105,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     };
     document.addEventListener("mousemove", mousemoveFn);
     return () => document.removeEventListener("mousemove", mousemoveFn);
-  }, []);
+  }, [drawType]);
 
   useEffect(() => {
     const mouseupFn = (e: MouseEvent) => {

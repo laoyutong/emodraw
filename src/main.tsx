@@ -2,12 +2,14 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
-import { DrawTypeContext } from "@/context";
+import { DrawTypeContext, CursorTypeContext } from "@/context";
 
 ReactDOM.render(
   <React.StrictMode>
     <DrawTypeContext>
-      <App />
+      <CursorTypeContext>
+        <App />
+      </CursorTypeContext>
     </DrawTypeContext>
   </React.StrictMode>,
   document.getElementById("root")

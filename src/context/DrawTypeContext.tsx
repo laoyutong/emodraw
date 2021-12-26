@@ -15,7 +15,6 @@ export const drawTypeContext = createContext<DrawTypeContextValue>(
 );
 
 const DrawTypeContext = ({ children }: DrawTypeContextProps): JSX.Element => {
-  // todo
   const [drawType, setDrawType] = useState<DrawType>("selection");
 
   return (
