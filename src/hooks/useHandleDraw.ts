@@ -17,6 +17,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const { drawType, setDrawType } = useContext(drawTypeContext);
   const { setCursorType } = useContext(cursorTypeContext);
   const canMousemove = useRef(false);
+  const hasSelected = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
 
   const resetCanvas = () => {
@@ -37,24 +38,6 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       resetCanvas();
     }
   });
-
-  useEffect(() => {
-    const fn = (e: MouseEvent) => {
-      if (drawType !== "selection") {
-        return;
-      }
-      history.data.forEach((item) => (item.isSelected = false));
-      const { offsetX, offsetY } = e;
-      const id = getSelectionElement({ x: offsetX, y: offsetY });
-      if (id) {
-        history.data.find((item) => item.id === id)!.isSelected = true;
-        history.storageDrawData();
-      }
-      resetCanvas();
-    };
-    document.addEventListener("click", fn);
-    return () => document.removeEventListener("click", fn);
-  }, [drawType]);
 
   useEffect(() => {
     const mousedownFn = (e: MouseEvent) => {
@@ -89,7 +72,16 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           }
         });
       } else if (drawType === "selection") {
-        // todo
+        const id = getSelectionElement({ x: offsetX, y: offsetY });
+        history.data.forEach((item) => (item.isSelected = false));
+        hasSelected.current = false;
+        if (id) {
+          history.data.find((item) => item.id === id)!.isSelected = true;
+          hasSelected.current = true;
+          history.storageDrawData();
+          canMousemove.current = true;
+        }
+        resetCanvas();
       } else {
         canMousemove.current = true;
         history.addDrawData({
@@ -120,10 +112,22 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         }
         return;
       }
-      const activeDrawData = history.data[history.data.length - 1];
-      if (activeDrawData.type !== "text") {
-        activeDrawData.width = offsetX - coordinate.current.x;
-        activeDrawData.height = offsetY - coordinate.current.y;
+      if (drawType === "selection") {
+        if (hasSelected.current) {
+          const selectedData = history.data.find((i) => i.isSelected)!;
+          selectedData.x = selectedData.x + offsetX - coordinate.current.x;
+          selectedData.y = selectedData.y + offsetY - coordinate.current.y;
+          coordinate.current = {
+            x: offsetX,
+            y: offsetY,
+          };
+        }
+      } else {
+        const activeDrawData = history.data[history.data.length - 1];
+        if (activeDrawData.type !== "text") {
+          activeDrawData.width = offsetX - coordinate.current.x;
+          activeDrawData.height = offsetY - coordinate.current.y;
+        }
       }
       resetCanvas();
     };
@@ -139,16 +143,22 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       canMousemove.current = false;
       if (
         e.offsetX === coordinate.current.x &&
-        e.offsetY === coordinate.current.y
+        e.offsetY === coordinate.current.y &&
+        drawType !== "selection"
       ) {
         history.revokeDrawData();
+      } else {
+        if (drawType !== "selection") {
+          history.data[history.data.length - 1].isSelected = true;
+          setDrawType("selection");
+          resetCanvas();
+        }
       }
-      setDrawType("selection");
       history.storageDrawData();
     };
     document.addEventListener("mouseup", mouseupFn);
     return () => document.removeEventListener("mouseup", mouseupFn);
-  }, []);
+  }, [drawType]);
 };
 
 export default useHandleDraw;

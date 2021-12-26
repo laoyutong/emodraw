@@ -20,68 +20,84 @@ const getDistance = (x1: number, x2: number, y1: number, y2: number) =>
   );
 
 const getSelectionElement = ({ x, y }: Coordinate): string | null => {
+  const selectedList = history.data.filter((item) => item.isSelected);
+  for (let i = 0; i < selectedList.length; i++) {
+    const data = selectedList[i];
+    const largeX = data.width > 0 ? data.x + data.width : data.x;
+    const smallX = data.width > 0 ? data.x : data.x + data.width;
+    const largeY = data.height > 0 ? data.y + data.height : data.y;
+    const smallY = data.height > 0 ? data.y : data.y + data.height;
+    if (x >= smallX && x <= largeX && y >= smallY && y <= largeY) {
+      return data.id;
+    }
+  }
+
   for (let i = 0; i < history.data.length; i++) {
     const data = history.data[i];
     const x1 = data.x;
     const x2 = data.x + data.width;
     const y1 = data.y;
     const y2 = data.y + data.height;
-    switch (data.type) {
-      case "text":
-        if (isRange(x, x1, getBigX(x2)) && isRange(y, y1, getBigY(y2))) {
-          console.log("text");
+
+    if (
+      data.type === "text" &&
+      isRange(x, x1, getBigX(x2)) &&
+      isRange(y, y1, getBigY(y2))
+    ) {
+      console.log("text");
+      return data.id;
+    }
+
+    if (
+      (data.type === "rectangle" &&
+        (isRange(x, x1, getBigX(x1)) || isRange(x, x2, getBigX(x2))) &&
+        isRange(y, y1, getBigY(y2))) ||
+      ((isRange(y, y1, getBigY(y1)) || isRange(y, y2, getBigY(y2))) &&
+        isRange(x, x1, getBigX(x2)))
+    ) {
+      console.log("rectangle");
+      return data.id;
+    }
+
+    if (data.type === "diamond") {
+      const targetArea = data.width * data.height;
+      const disX = Math.abs(x - (x1 + data.width / 2));
+      const disY = Math.abs(y - (y1 + data.height / 2));
+      const maxArea =
+        ((disX + GAP) * data.height + (disY + GAP) * data.width) * 2;
+      const minArea =
+        ((disX - GAP) * data.height + (disY - GAP) * data.width) * 2;
+      if (maxArea >= targetArea && minArea <= targetArea) {
+        console.log("diamond");
+        return data.id;
+      }
+    }
+
+    if (data.type === "circle") {
+      const centerX = x1 + data.width / 2;
+      const centerY = y1 + data.height / 2;
+      const lengthX = Math.abs(data.width / 2);
+      const lengthY = Math.abs(data.height / 2);
+      const step = lengthX > lengthY ? 1 / lengthX : 1 / lengthY;
+      for (let i = 0; i < Math.PI * 2; i += step) {
+        const x1 = Math.round(centerX + lengthX * Math.cos(i));
+        const y1 = Math.round(centerY + lengthY * Math.sin(i));
+        if (isRange(x, x1, getBigX(x1)) && isRange(y, y1, getBigY(y1))) {
+          console.log("circle");
           return data.id;
         }
-        return null;
-      case "rectangle":
-        if (
-          ((isRange(x, x1, getBigX(x1)) || isRange(x, x2, getBigX(x2))) &&
-            isRange(y, y1, getBigY(y2))) ||
-          ((isRange(y, y1, getBigY(y1)) || isRange(y, y2, getBigY(y2))) &&
-            isRange(x, x1, getBigX(x2)))
-        ) {
-          console.log("rectangle");
-          return data.id;
-        }
-        return null;
-      case "diamond":
-        const targetArea = data.width * data.height;
-        const disX = Math.abs(x - (x1 + data.width / 2));
-        const disY = Math.abs(y - (y1 + data.height / 2));
-        const maxArea =
-          ((disX + GAP) * data.height + (disY + GAP) * data.width) * 2;
-        const minArea =
-          ((disX - GAP) * data.height + (disY - GAP) * data.width) * 2;
-        if (maxArea >= targetArea && minArea <= targetArea) {
-          console.log("diamond");
-          return data.id;
-        }
-        return null;
-      case "circle":
-        const centerX = x1 + data.width / 2;
-        const centerY = y1 + data.height / 2;
-        const lengthX = Math.abs(data.width / 2);
-        const lengthY = Math.abs(data.height / 2);
-        const step = lengthX > lengthY ? 1 / lengthX : 1 / lengthY;
-        for (let i = 0; i < Math.PI * 2; i += step) {
-          const x1 = Math.round(centerX + lengthX * Math.cos(i));
-          const y1 = Math.round(centerY + lengthY * Math.sin(i));
-          if (isRange(x, x1, getBigX(x1)) && isRange(y, y1, getBigY(y1))) {
-            console.log("circle");
-            return data.id;
-          }
-        }
-        return null;
-      case "arrow":
-        const target = Math.round(getDistance(x1, x2, y1, y2));
-        const active = Math.round(
-          getDistance(x, x1, y, y1) + getDistance(x, x2, y, y2)
-        );
-        if (active >= target - GAP / 2 && active <= target + GAP / 2) {
-          console.log("arrow");
-          return data.id;
-        }
-        return null;
+      }
+    }
+
+    if (data.type === "arrow") {
+      const target = Math.round(getDistance(x1, x2, y1, y2));
+      const active = Math.round(
+        getDistance(x, x1, y, y1) + getDistance(x, x2, y, y2)
+      );
+      if (active >= target - GAP / 2 && active <= target + GAP / 2) {
+        console.log("arrow");
+        return data.id;
+      }
     }
   }
   return null;
