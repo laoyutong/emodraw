@@ -20,24 +20,22 @@ const getDistance = (x1: number, x2: number, y1: number, y2: number) =>
   );
 
 const getSelectionElement = ({ x, y }: Coordinate): string | null => {
-  const selectedList = history.data.filter((item) => item.isSelected);
-  for (let i = 0; i < selectedList.length; i++) {
-    const data = selectedList[i];
-    const largeX = data.width > 0 ? data.x + data.width : data.x;
-    const smallX = data.width > 0 ? data.x : data.x + data.width;
-    const largeY = data.height > 0 ? data.y + data.height : data.y;
-    const smallY = data.height > 0 ? data.y : data.y + data.height;
-    if (x >= smallX && x <= largeX && y >= smallY && y <= largeY) {
-      return data.id;
-    }
-  }
-
   for (let i = 0; i < history.data.length; i++) {
     const data = history.data[i];
     const x1 = data.x;
     const x2 = data.x + data.width;
     const y1 = data.y;
     const y2 = data.y + data.height;
+
+    if (data.isSelected) {
+      const largeX = data.width > 0 ? x2 : x1;
+      const smallX = data.width > 0 ? x1 : x2;
+      const largeY = data.height > 0 ? y2 : y1;
+      const smallY = data.height > 0 ? y1 : y2;
+      if (x >= smallX && x <= largeX && y >= smallY && y <= largeY) {
+        return data.id;
+      }
+    }
 
     if (
       data.type === "text" &&

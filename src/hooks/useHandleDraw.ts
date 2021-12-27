@@ -18,6 +18,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const { setCursorType } = useContext(cursorTypeContext);
   const canMousemove = useRef(false);
   const hasSelected = useRef(false);
+  const isMoveing = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
 
   const resetCanvas = () => {
@@ -117,10 +118,16 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           const selectedData = history.data.find((i) => i.isSelected)!;
           selectedData.x = selectedData.x + offsetX - coordinate.current.x;
           selectedData.y = selectedData.y + offsetY - coordinate.current.y;
-          coordinate.current = {
-            x: offsetX,
-            y: offsetY,
-          };
+          if (
+            offsetX !== coordinate.current.x ||
+            offsetY !== coordinate.current.y
+          ) {
+            isMoveing.current = true;
+            coordinate.current = {
+              x: offsetX,
+              y: offsetY,
+            };
+          }
         }
       } else {
         const activeDrawData = history.data[history.data.length - 1];
@@ -141,9 +148,10 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         return;
       }
       canMousemove.current = false;
+      const { offsetX, offsetY } = e;
       if (
-        e.offsetX === coordinate.current.x &&
-        e.offsetY === coordinate.current.y &&
+        offsetX === coordinate.current.x &&
+        offsetY === coordinate.current.y &&
         drawType !== "selection"
       ) {
         history.revokeDrawData();
@@ -154,6 +162,17 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           resetCanvas();
         }
       }
+      if (drawType === "selection" && !isMoveing.current) {
+        history.data.forEach((item) => (item.isSelected = false));
+        const id = getSelectionElement({ x: offsetX, y: offsetY });
+        if (id) {
+          history.data.find((item) => item.id === id)!.isSelected = true;
+        } else {
+          setCursorType(CURSOR_CONFIG.default);
+        }
+        resetCanvas();
+      }
+      isMoveing.current = false;
       history.storageDrawData();
     };
     document.addEventListener("mouseup", mouseupFn);
