@@ -47,11 +47,11 @@ const getSelectionElement = ({ x, y }: Coordinate): string | null => {
     }
 
     if (
-      (data.type === "rectangle" &&
-        (isRange(x, x1, getBigX(x1)) || isRange(x, x2, getBigX(x2))) &&
+      data.type === "rectangle" &&
+      (((isRange(x, x1, getBigX(x1)) || isRange(x, x2, getBigX(x2))) &&
         isRange(y, y1, getBigY(y2))) ||
-      ((isRange(y, y1, getBigY(y1)) || isRange(y, y2, getBigY(y2))) &&
-        isRange(x, x1, getBigX(x2)))
+        ((isRange(y, y1, getBigY(y1)) || isRange(y, y2, getBigY(y2))) &&
+          isRange(x, x1, getBigX(x2))))
     ) {
       console.log("rectangle");
       return data.id;
