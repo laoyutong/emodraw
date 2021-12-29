@@ -19,7 +19,7 @@ const getDistance = (x1: number, x2: number, y1: number, y2: number) =>
     1 / 2
   );
 
-const getSelectionElement = ({ x, y }: Coordinate): string | null => {
+export const getSelectionElement = ({ x, y }: Coordinate): string | null => {
   for (let i = 0; i < history.data.length; i++) {
     const data = history.data[i];
     const x1 = data.x;
@@ -42,7 +42,6 @@ const getSelectionElement = ({ x, y }: Coordinate): string | null => {
       isRange(x, x1, getBigX(x2)) &&
       isRange(y, y1, getBigY(y2))
     ) {
-      console.log("text");
       return data.id;
     }
 
@@ -53,7 +52,6 @@ const getSelectionElement = ({ x, y }: Coordinate): string | null => {
         ((isRange(y, y1, getBigY(y1)) || isRange(y, y2, getBigY(y2))) &&
           isRange(x, x1, getBigX(x2))))
     ) {
-      console.log("rectangle");
       return data.id;
     }
 
@@ -66,7 +64,6 @@ const getSelectionElement = ({ x, y }: Coordinate): string | null => {
       const minArea =
         ((disX - GAP) * data.height + (disY - GAP) * data.width) * 2;
       if (maxArea >= targetArea && minArea <= targetArea) {
-        console.log("diamond");
         return data.id;
       }
     }
@@ -81,7 +78,6 @@ const getSelectionElement = ({ x, y }: Coordinate): string | null => {
         const x1 = Math.round(centerX + lengthX * Math.cos(i));
         const y1 = Math.round(centerY + lengthY * Math.sin(i));
         if (isRange(x, x1, getBigX(x1)) && isRange(y, y1, getBigY(y1))) {
-          console.log("circle");
           return data.id;
         }
       }
@@ -93,7 +89,6 @@ const getSelectionElement = ({ x, y }: Coordinate): string | null => {
         getDistance(x, x1, y, y1) + getDistance(x, x2, y, y2)
       );
       if (active >= target - GAP / 2 && active <= target + GAP / 2) {
-        console.log("arrow");
         return data.id;
       }
     }
@@ -101,4 +96,42 @@ const getSelectionElement = ({ x, y }: Coordinate): string | null => {
   return null;
 };
 
-export default getSelectionElement;
+export const getSelectionArea = (
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): string[] => {
+  const [maxX, minX] = width > 0 ? [x + width, x] : [x, x + width];
+  const [maxY, minY] = height > 0 ? [y + height, y] : [y, y + height];
+  return history.data
+    .filter((data) => {
+      if (data.type === "selection") {
+        return false;
+      }
+      const [maxDataX, minDataX] =
+        data.width > 0
+          ? [data.x + data.width, data.x]
+          : [data.x, data.x + data.width];
+      const [maxDataY, minDataY] =
+        data.height > 0
+          ? [data.y + data.height, data.y]
+          : [data.y, data.y + data.height];
+
+      if (
+        maxX >= maxDataX &&
+        minX <= minDataX &&
+        maxY >= maxDataY &&
+        minY <= minDataY
+      ) {
+        return true;
+      }
+      return false;
+    })
+    .map(({ id }) => id);
+};
+
+export const isInSelectionArea = (offsetX: number, offsetY: number) => {
+  const [x1, x2, y1, y2] = history.getSelectionData();
+  return offsetX <= x1 && offsetX >= x2 && offsetY <= y1 && offsetY >= y2;
+};

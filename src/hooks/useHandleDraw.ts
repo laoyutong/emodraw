@@ -7,8 +7,10 @@ import { CURSOR_CONFIG, DEFAULT_FONT_SIZE } from "@/config";
 import {
   drawCanvas,
   history,
+  isInSelectionArea,
   createTextArea,
   getSelectionElement,
+  getSelectionArea,
   splitContent,
 } from "@/util";
 import type { Coordinate } from "@/type";
@@ -18,6 +20,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const { setCursorType } = useContext(cursorTypeContext);
   const canMousemove = useRef(false);
   const hasSelected = useRef(false);
+  const isSelection = useRef(false);
+  const isSelectedArea = useRef(false);
   const isMoveing = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
 
@@ -27,6 +31,15 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       drawCanvas(canvasCtx.current);
     }
   };
+
+  useEffect(() => {
+    setCursorType(
+      drawType === "selection" ? CURSOR_CONFIG.default : CURSOR_CONFIG.crosshair
+    );
+    if (drawType !== "selection") {
+      history.data.forEach((d) => (d.isSelected = false));
+    }
+  }, [drawType]);
 
   useKeydown((key, metaKey) => {
     if (metaKey && key === "z") {
@@ -73,17 +86,35 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           }
         });
       } else if (drawType === "selection") {
+        // 批量移动选择元素
+        if (isSelectedArea.current && isInSelectionArea(offsetX, offsetY)) {
+          hasSelected.current = true;
+          canMousemove.current = true;
+          return;
+        }
         const id = getSelectionElement({ x: offsetX, y: offsetY });
-        history.data.forEach((item) => (item.isSelected = false));
+        history.data.forEach((d) => (d.isSelected = false));
         hasSelected.current = false;
+        canMousemove.current = true;
         if (id) {
-          history.data.find((item) => item.id === id)!.isSelected = true;
+          history.data.find((d) => d.id === id)!.isSelected = true;
           hasSelected.current = true;
           history.storageDrawData();
-          canMousemove.current = true;
+        } else {
+          // 选择selection范围
+          history.addDrawData({
+            type: drawType,
+            id: nanoid(),
+            x: offsetX,
+            y: offsetY,
+            width: 0,
+            height: 0,
+            isSelected: false,
+          });
+          resetCanvas();
         }
-        resetCanvas();
       } else {
+        // 元素绘制的初始化
         canMousemove.current = true;
         history.addDrawData({
           type: drawType,
@@ -104,36 +135,56 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     const mousemoveFn = (e: MouseEvent) => {
       const { offsetX, offsetY } = e;
       if (!canMousemove.current) {
+        // hover时改变cursor类型
         if (drawType === "selection") {
-          const result = getSelectionElement({
-            x: offsetX,
-            y: offsetY,
-          });
+          const result = isSelectedArea.current
+            ? isInSelectionArea(offsetX, offsetY)
+            : getSelectionElement({
+                x: offsetX,
+                y: offsetY,
+              });
           setCursorType(result ? CURSOR_CONFIG.move : CURSOR_CONFIG.default);
         }
         return;
       }
-      if (drawType === "selection") {
-        if (hasSelected.current) {
-          const selectedData = history.data.find((i) => i.isSelected)!;
-          selectedData.x = selectedData.x + offsetX - coordinate.current.x;
-          selectedData.y = selectedData.y + offsetY - coordinate.current.y;
-          if (
-            offsetX !== coordinate.current.x ||
-            offsetY !== coordinate.current.y
-          ) {
-            isMoveing.current = true;
-            coordinate.current = {
-              x: offsetX,
-              y: offsetY,
-            };
-          }
+      const width = offsetX - coordinate.current.x;
+      const height = offsetY - coordinate.current.y;
+      // 移动选择元素
+      if (drawType === "selection" && hasSelected.current) {
+        const selectedList = history.data.filter((d) => d.isSelected);
+        selectedList.forEach((s) => {
+          s.x = s.x + width;
+          s.y = s.y + height;
+        });
+        if (
+          offsetX !== coordinate.current.x ||
+          offsetY !== coordinate.current.y
+        ) {
+          isMoveing.current = true;
+          coordinate.current = {
+            x: offsetX,
+            y: offsetY,
+          };
         }
       } else {
+        // 元素的绘制过程
         const activeDrawData = history.data[history.data.length - 1];
         if (activeDrawData.type !== "text") {
-          activeDrawData.width = offsetX - coordinate.current.x;
-          activeDrawData.height = offsetY - coordinate.current.y;
+          activeDrawData.width = width;
+          activeDrawData.height = height;
+        }
+        if (activeDrawData.type === "selection") {
+          isSelection.current = true;
+          const selectionIds = getSelectionArea(
+            coordinate.current.x,
+            coordinate.current.y,
+            width,
+            height
+          );
+          isSelectedArea.current = selectionIds.length > 1;
+          history.data.forEach((d) => {
+            d.isSelected = selectionIds.includes(d.id);
+          });
         }
       }
       resetCanvas();
@@ -149,30 +200,38 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       }
       canMousemove.current = false;
       const { offsetX, offsetY } = e;
+      // 没有移动的情况
       if (
         offsetX === coordinate.current.x &&
-        offsetY === coordinate.current.y &&
-        drawType !== "selection"
+        offsetY === coordinate.current.y
       ) {
-        history.revokeDrawData();
+        drawType !== "selection" && history.revokeDrawData();
+        isSelectedArea.current = false;
       } else {
         if (drawType !== "selection") {
           history.data[history.data.length - 1].isSelected = true;
           setDrawType("selection");
-          resetCanvas();
+        } else {
+          history.revokeDrawData();
         }
+        resetCanvas();
       }
-      if (drawType === "selection" && !isMoveing.current) {
-        history.data.forEach((item) => (item.isSelected = false));
+      if (
+        drawType === "selection" &&
+        !isMoveing.current &&
+        !isSelection.current
+      ) {
+        history.data.forEach((d) => (d.isSelected = false));
         const id = getSelectionElement({ x: offsetX, y: offsetY });
         if (id) {
-          history.data.find((item) => item.id === id)!.isSelected = true;
+          history.data.find((d) => d.id === id)!.isSelected = true;
         } else {
           setCursorType(CURSOR_CONFIG.default);
         }
         resetCanvas();
       }
       isMoveing.current = false;
+      isSelection.current = false;
       history.storageDrawData();
     };
     document.addEventListener("mouseup", mouseupFn);

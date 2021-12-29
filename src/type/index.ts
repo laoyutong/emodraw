@@ -26,5 +26,5 @@ export interface TextDrawData extends BaseDrawData {
 }
 
 export interface GraghDrawData extends BaseDrawData {
-  type: "rectangle" | "circle" | "diamond" | "arrow";
+  type: "rectangle" | "circle" | "diamond" | "arrow" | "selection";
 }

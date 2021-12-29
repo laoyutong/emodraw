@@ -18,6 +18,19 @@ const drawRect = (
   ctx.stroke();
 };
 
+const drawSelection = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) => {
+  ctx.save();
+  ctx.fillStyle = "rgba(255,165,0,0.5)";
+  ctx.fillRect(x, y, width, height);
+  ctx.restore();
+};
+
 const drawEllipse = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -113,6 +126,9 @@ const drawGragh = (
     case "diamond":
       drawDiamond(canvasCtx, x, y, width, height);
       return;
+    case "selection":
+      drawSelection(canvasCtx, x, y, width, height);
+      return;
   }
 };
 
@@ -130,14 +146,13 @@ const drawText = (
 
 const drawSelectedArea = (
   ctx: CanvasRenderingContext2D,
-  { x, y, width, height }: DrawData
+  { x, y, width, height }: Pick<DrawData, "x" | "y" | "width" | "height">,
+  isSelectionArea: boolean
 ) => {
   const gapValue = 5;
   const rectValue = 8;
   const gapX = width > 0 ? gapValue : -gapValue;
   const gapY = height > 0 ? gapValue : -gapValue;
-  const rectWidth = width > 0 ? rectValue : -rectValue;
-  const rectHeight = height > 0 ? rectValue : -rectValue;
   const x1 = x - gapX;
   const x2 = x + width + gapX;
   const y1 = y - gapY;
@@ -151,15 +166,34 @@ const drawSelectedArea = (
   ctx.closePath();
   ctx.stroke();
   ctx.setLineDash([]);
-  drawRect(ctx, x1, y1, -rectWidth, -rectHeight);
-  drawRect(ctx, x2, y1, rectWidth, -rectHeight);
-  drawRect(ctx, x2, y2, rectWidth, rectHeight);
-  drawRect(ctx, x1, y2, -rectWidth, rectHeight);
+  if (!isSelectionArea) {
+    const rectWidth = width > 0 ? rectValue : -rectValue;
+    const rectHeight = height > 0 ? rectValue : -rectValue;
+    drawRect(ctx, x1, y1, -rectWidth, -rectHeight);
+    drawRect(ctx, x2, y1, rectWidth, -rectHeight);
+    drawRect(ctx, x2, y2, rectWidth, rectHeight);
+    drawRect(ctx, x1, y2, -rectWidth, rectHeight);
+  }
+};
+
+const drawSelectionArea = (canvasCtx: CanvasRenderingContext2D) => {
+  const [x1, x2, y1, y2] = history.getSelectionData();
+  drawSelectedArea(
+    canvasCtx,
+    { x: x1, y: y1, width: x2 - x1, height: y2 - y1 },
+    false
+  );
 };
 
 const drawCanvas = (canvasCtx: CanvasRenderingContext2D) => {
+  let isSelectionArea = false;
+  const selectedList = history.data.filter((d) => d.isSelected);
+  if (selectedList.length > 1) {
+    drawSelectionArea(canvasCtx);
+    isSelectionArea = true;
+  }
   history.data.forEach((data) => {
-    data.isSelected && drawSelectedArea(canvasCtx, data);
+    data.isSelected && drawSelectedArea(canvasCtx, data, isSelectionArea);
     if (data.type === "text") {
       drawText(canvasCtx, data);
     } else {
