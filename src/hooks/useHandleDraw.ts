@@ -206,7 +206,9 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         offsetY === coordinate.current.y
       ) {
         drawType !== "selection" && history.revokeDrawData();
-        isSelectedArea.current = false;
+        if (!isMoveing.current) {
+          isSelectedArea.current = false;
+        }
       } else {
         if (drawType !== "selection") {
           history.data[history.data.length - 1].isSelected = true;
