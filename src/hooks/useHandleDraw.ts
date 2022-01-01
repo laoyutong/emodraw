@@ -212,6 +212,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           history.data[history.data.length - 1].isSelected = true;
           setDrawType("selection");
         } else {
+          // 范围selection
           history.revokeDrawData();
         }
         resetCanvas();

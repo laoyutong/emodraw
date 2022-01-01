@@ -62,7 +62,10 @@ class History {
   }
 
   storageDrawData() {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(this.data));
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY,
+      JSON.stringify(this.data.filter((d) => d.type !== "selection"))
+    );
   }
 
   delete() {
