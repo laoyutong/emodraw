@@ -1,7 +1,6 @@
 import { createContext, ReactNode, useState } from "react";
 import { CURSOR_CONFIG } from "@/config";
-
-type CursorType = typeof CURSOR_CONFIG[keyof typeof CURSOR_CONFIG];
+import type { CursorType } from "@/type";
 
 interface CursorContextProps {
   children: ReactNode;

@@ -62,10 +62,21 @@ class History {
   }
 
   storageDrawData() {
-    localStorage.setItem(
-      LOCAL_STORAGE_KEY,
-      JSON.stringify(this.data.filter((d) => d.type !== "selection"))
-    );
+    this.data = this.data
+      .filter((d) => d.type !== "selection")
+      .map((d) => {
+        const handledItem = { ...d };
+        if (handledItem.width < 0) {
+          handledItem.x = handledItem.x + handledItem.width;
+          handledItem.width = -handledItem.width;
+        }
+        if (handledItem.height < 0) {
+          handledItem.y = handledItem.y + handledItem.height;
+          handledItem.height = -handledItem.height;
+        }
+        return handledItem;
+      });
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(this.data));
   }
 
   delete() {

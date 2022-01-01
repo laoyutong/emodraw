@@ -1,4 +1,11 @@
-import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE, ARROW_LENGTH } from "@/config";
+import {
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_SIZE,
+  ARROW_LENGTH,
+  SELECTION_GAP,
+  SELECTION_RECT_WIDTH,
+  SELECTION_LINE_DASH,
+} from "@/config";
 import { history, splitContent } from "@/util";
 import type { DrawData, GraghDrawData, TextDrawData } from "@/type";
 
@@ -149,15 +156,13 @@ const drawSelectedArea = (
   { x, y, width, height }: Pick<DrawData, "x" | "y" | "width" | "height">,
   isSelectionArea: boolean
 ) => {
-  const gapValue = 5;
-  const rectValue = 8;
-  const gapX = width > 0 ? gapValue : -gapValue;
-  const gapY = height > 0 ? gapValue : -gapValue;
+  const gapX = width > 0 ? SELECTION_GAP : -SELECTION_GAP;
+  const gapY = height > 0 ? SELECTION_GAP : -SELECTION_GAP;
   const x1 = x - gapX;
   const x2 = x + width + gapX;
   const y1 = y - gapY;
   const y2 = y + height + gapY;
-  ctx.setLineDash([15, 10]);
+  ctx.setLineDash(SELECTION_LINE_DASH);
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y1);
@@ -167,8 +172,9 @@ const drawSelectedArea = (
   ctx.stroke();
   ctx.setLineDash([]);
   if (!isSelectionArea) {
-    const rectWidth = width > 0 ? rectValue : -rectValue;
-    const rectHeight = height > 0 ? rectValue : -rectValue;
+    const rectWidth = width > 0 ? SELECTION_RECT_WIDTH : -SELECTION_RECT_WIDTH;
+    const rectHeight =
+      height > 0 ? SELECTION_RECT_WIDTH : -SELECTION_RECT_WIDTH;
     drawRect(ctx, x1, y1, -rectWidth, -rectHeight);
     drawRect(ctx, x2, y1, rectWidth, -rectHeight);
     drawRect(ctx, x2, y2, rectWidth, rectHeight);

@@ -5,5 +5,6 @@ export {
   getSelectionElement,
   getSelectionArea,
   isInSelectionArea,
+  getSelectionRectType,
 } from "./selection";
 export { splitContent } from "./helper";

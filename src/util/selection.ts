@@ -1,5 +1,6 @@
 import { history } from "@/util";
-import type { Coordinate } from "@/type";
+import { SELECTION_RECT_WIDTH, SELECTION_GAP, CURSOR_CONFIG } from "@/config";
+import type { Coordinate, CursorType } from "@/type";
 
 const GAP = 5;
 
@@ -134,4 +135,44 @@ export const getSelectionArea = (
 export const isInSelectionArea = (offsetX: number, offsetY: number) => {
   const [x1, x2, y1, y2] = history.getSelectionData();
   return offsetX <= x1 && offsetX >= x2 && offsetY <= y1 && offsetY >= y2;
+};
+
+export const getSelectionRectType = ({
+  x,
+  y,
+}: Coordinate): [CursorType, "top" | "bottom"] | null => {
+  const [x1, x2, y1, y2] = history.getSelectionData();
+  if (
+    x <= x2 - SELECTION_GAP &&
+    x >= x2 - SELECTION_RECT_WIDTH - SELECTION_GAP &&
+    y <= y2 - SELECTION_GAP &&
+    y >= y2 - SELECTION_RECT_WIDTH - SELECTION_GAP
+  ) {
+    return [CURSOR_CONFIG.nwseResize, "top"];
+  }
+  if (
+    x >= x1 + SELECTION_GAP &&
+    x <= x1 + SELECTION_RECT_WIDTH + SELECTION_GAP &&
+    y >= y1 + SELECTION_GAP &&
+    y <= y1 + SELECTION_RECT_WIDTH + SELECTION_GAP
+  ) {
+    return [CURSOR_CONFIG.nwseResize, "bottom"];
+  }
+  if (
+    x <= x2 - SELECTION_GAP &&
+    x >= x2 - SELECTION_RECT_WIDTH - SELECTION_GAP &&
+    y >= y1 + SELECTION_GAP &&
+    y <= y1 + SELECTION_RECT_WIDTH + SELECTION_GAP
+  ) {
+    return [CURSOR_CONFIG.neswResize, "bottom"];
+  }
+  if (
+    x >= x1 + SELECTION_GAP &&
+    x <= x1 + SELECTION_RECT_WIDTH + SELECTION_GAP &&
+    y <= y2 - SELECTION_GAP &&
+    y >= y2 - SELECTION_RECT_WIDTH - SELECTION_GAP
+  ) {
+    return [CURSOR_CONFIG.neswResize, "top"];
+  }
+  return null;
 };

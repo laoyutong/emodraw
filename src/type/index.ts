@@ -1,3 +1,5 @@
+import { CURSOR_CONFIG } from "@/config";
+
 export type DrawType =
   | "selection"
   | "rectangle"
@@ -28,3 +30,5 @@ export interface TextDrawData extends BaseDrawData {
 export interface GraghDrawData extends BaseDrawData {
   type: "rectangle" | "circle" | "diamond" | "arrow" | "selection";
 }
+
+export type CursorType = typeof CURSOR_CONFIG[keyof typeof CURSOR_CONFIG];

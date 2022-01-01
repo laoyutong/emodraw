@@ -11,17 +11,19 @@ import {
   createTextArea,
   getSelectionElement,
   getSelectionArea,
+  getSelectionRectType,
   splitContent,
 } from "@/util";
 import type { Coordinate } from "@/type";
 
 const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const { drawType, setDrawType } = useContext(drawTypeContext);
-  const { setCursorType } = useContext(cursorTypeContext);
+  const { cursorType, setCursorType } = useContext(cursorTypeContext);
   const canMousemove = useRef(false);
   const hasSelected = useRef(false);
   const isSelection = useRef(false);
   const isSelectedArea = useRef(false);
+  const resizePositon = useRef<"top" | "bottom">();
   const isMoveing = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
 
@@ -86,16 +88,23 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           }
         });
       } else if (drawType === "selection") {
+        canMousemove.current = true;
         // 批量移动选择元素
         if (isSelectedArea.current && isInSelectionArea(offsetX, offsetY)) {
           hasSelected.current = true;
-          canMousemove.current = true;
           return;
         }
+        // 调整选择元素的大小
+        const rectType = getSelectionRectType({ x: offsetX, y: offsetY });
+        if (rectType) {
+          resizePositon.current = rectType[1];
+          hasSelected.current = true;
+          return;
+        }
+
         const id = getSelectionElement({ x: offsetX, y: offsetY });
         history.data.forEach((d) => (d.isSelected = false));
         hasSelected.current = false;
-        canMousemove.current = true;
         if (id) {
           history.data.find((d) => d.id === id)!.isSelected = true;
           hasSelected.current = true;
@@ -134,8 +143,13 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   useEffect(() => {
     const mousemoveFn = (e: MouseEvent) => {
       const { offsetX, offsetY } = e;
+      // hover时改变cursor类型
       if (!canMousemove.current) {
-        // hover时改变cursor类型
+        const rectType = getSelectionRectType({ x: offsetX, y: offsetY });
+        if (rectType) {
+          setCursorType(rectType[0]);
+          return;
+        }
         if (drawType === "selection") {
           const result = isSelectedArea.current
             ? isInSelectionArea(offsetX, offsetY)
@@ -149,13 +163,40 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       }
       const width = offsetX - coordinate.current.x;
       const height = offsetY - coordinate.current.y;
-      // 移动选择元素
+      // 移动、修改选择元素
       if (drawType === "selection" && hasSelected.current) {
         const selectedList = history.data.filter((d) => d.isSelected);
-        selectedList.forEach((s) => {
-          s.x = s.x + width;
-          s.y = s.y + height;
-        });
+        if (cursorType === "nesw-resize") {
+          selectedList.forEach((s) => {
+            if (resizePositon.current === "top") {
+              s.y = s.y + height;
+              s.width = s.width + width;
+              s.height = s.height - height;
+            } else {
+              s.height = s.height + height;
+              s.x = s.x + width;
+              s.width = s.width - width;
+            }
+          });
+        } else if (cursorType === "nwse-resize") {
+          selectedList.forEach((s) => {
+            if (resizePositon.current === "top") {
+              s.x = s.x + width;
+              s.y = s.y + height;
+              s.width = s.width - width;
+              s.height = s.height - height;
+            } else {
+              s.width = s.width + width;
+              s.height = s.height + height;
+            }
+          });
+        } else {
+          selectedList.forEach((s) => {
+            s.x = s.x + width;
+            s.y = s.y + height;
+          });
+        }
+
         if (
           offsetX !== coordinate.current.x ||
           offsetY !== coordinate.current.y
@@ -191,7 +232,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     };
     document.addEventListener("mousemove", mousemoveFn);
     return () => document.removeEventListener("mousemove", mousemoveFn);
-  }, [drawType]);
+  }, [drawType, cursorType]);
 
   useEffect(() => {
     const mouseupFn = (e: MouseEvent) => {
