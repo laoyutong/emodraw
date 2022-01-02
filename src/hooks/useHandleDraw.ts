@@ -190,13 +190,13 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
             }
           } else if (cursorType === "nesw-resize") {
             if (resizePositon.current === "top") {
-              s.x += width;
               s.y += height;
-              s.width -= width;
+              s.width += width;
               s.height -= height;
             } else {
-              s.width += width;
               s.height += height;
+              s.x += width;
+              s.width -= width;
             }
           } else if (cursorType === "nwse-resize") {
             if (resizePositon.current === "top") {
