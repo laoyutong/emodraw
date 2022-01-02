@@ -137,41 +137,68 @@ export const isInSelectionArea = (offsetX: number, offsetY: number) => {
   return offsetX <= x1 && offsetX >= x2 && offsetY <= y1 && offsetY >= y2;
 };
 
+const isInRectSelection = (v1: number, v2: number, isAdd: boolean) => {
+  return isAdd
+    ? v1 >= v2 + SELECTION_GAP &&
+        v1 <= v2 + SELECTION_RECT_WIDTH + SELECTION_GAP
+    : v1 <= v2 - SELECTION_GAP &&
+        v1 >= v2 - SELECTION_RECT_WIDTH - SELECTION_GAP;
+};
+
 export const getSelectionRectType = ({
   x,
   y,
 }: Coordinate): [CursorType, "top" | "bottom"] | null => {
-  const [x1, x2, y1, y2] = history.getSelectionData();
-  if (
-    x <= x2 - SELECTION_GAP &&
-    x >= x2 - SELECTION_RECT_WIDTH - SELECTION_GAP &&
-    y <= y2 - SELECTION_GAP &&
-    y >= y2 - SELECTION_RECT_WIDTH - SELECTION_GAP
-  ) {
+  const [x1, x2, y1, y2, isArrowSelected] = history.getSelectionData();
+
+  if (isArrowSelected) {
+    if (x1 > x2 && y1 > y2) {
+      if (isInRectSelection(x, x2, false) && isInRectSelection(y, y2, false)) {
+        return [CURSOR_CONFIG.nwseResize, "top"];
+      }
+
+      if (isInRectSelection(x, x1, true) && isInRectSelection(y, y1, true)) {
+        return [CURSOR_CONFIG.nwseResize, "bottom"];
+      }
+    } else if (x1 > x2 && y1 < y2) {
+      if (isInRectSelection(x, x2, false) && isInRectSelection(y, y2, true)) {
+        return [CURSOR_CONFIG.neswResize, "bottom"];
+      }
+
+      if (isInRectSelection(x, x1, true) && isInRectSelection(y, y1, false)) {
+        return [CURSOR_CONFIG.neswResize, "top"];
+      }
+    } else if (x1 < x2 && y1 > y2) {
+      if (isInRectSelection(x, x2, true) && isInRectSelection(y, y2, false)) {
+        return [CURSOR_CONFIG.neswResize, "top"];
+      }
+
+      if (isInRectSelection(x, x1, false) && isInRectSelection(y, y1, true)) {
+        return [CURSOR_CONFIG.neswResize, "bottom"];
+      }
+    } else {
+      if (isInRectSelection(x, x1, false) && isInRectSelection(y, y1, false)) {
+        return [CURSOR_CONFIG.nwseResize, "top"];
+      }
+
+      if (isInRectSelection(x, x2, true) && isInRectSelection(y, y2, true)) {
+        return [CURSOR_CONFIG.nwseResize, "bottom"];
+      }
+    }
+    return null;
+  }
+
+  if (isInRectSelection(x, x2, false) && isInRectSelection(y, y2, false)) {
     return [CURSOR_CONFIG.nwseResize, "top"];
   }
-  if (
-    x >= x1 + SELECTION_GAP &&
-    x <= x1 + SELECTION_RECT_WIDTH + SELECTION_GAP &&
-    y >= y1 + SELECTION_GAP &&
-    y <= y1 + SELECTION_RECT_WIDTH + SELECTION_GAP
-  ) {
+  if (isInRectSelection(x, x1, true) && isInRectSelection(y, y1, true)) {
     return [CURSOR_CONFIG.nwseResize, "bottom"];
   }
-  if (
-    x <= x2 - SELECTION_GAP &&
-    x >= x2 - SELECTION_RECT_WIDTH - SELECTION_GAP &&
-    y >= y1 + SELECTION_GAP &&
-    y <= y1 + SELECTION_RECT_WIDTH + SELECTION_GAP
-  ) {
+
+  if (isInRectSelection(x, x2, false) && isInRectSelection(y, y1, true)) {
     return [CURSOR_CONFIG.neswResize, "bottom"];
   }
-  if (
-    x >= x1 + SELECTION_GAP &&
-    x <= x1 + SELECTION_RECT_WIDTH + SELECTION_GAP &&
-    y <= y2 - SELECTION_GAP &&
-    y >= y2 - SELECTION_RECT_WIDTH - SELECTION_GAP
-  ) {
+  if (isInRectSelection(x, x1, true) && isInRectSelection(y, y2, false)) {
     return [CURSOR_CONFIG.neswResize, "top"];
   }
   return null;

@@ -153,7 +153,13 @@ const drawText = (
 
 const drawSelectedArea = (
   ctx: CanvasRenderingContext2D,
-  { x, y, width, height }: Pick<DrawData, "x" | "y" | "width" | "height">,
+  {
+    x,
+    y,
+    width,
+    height,
+    type,
+  }: Pick<DrawData, "x" | "y" | "width" | "height" | "type">,
   isSelectionArea: boolean
 ) => {
   const gapX = width > 0 ? SELECTION_GAP : -SELECTION_GAP;
@@ -176,9 +182,11 @@ const drawSelectedArea = (
     const rectHeight =
       height > 0 ? SELECTION_RECT_WIDTH : -SELECTION_RECT_WIDTH;
     drawRect(ctx, x1, y1, -rectWidth, -rectHeight);
-    drawRect(ctx, x2, y1, rectWidth, -rectHeight);
     drawRect(ctx, x2, y2, rectWidth, rectHeight);
-    drawRect(ctx, x1, y2, -rectWidth, rectHeight);
+    if (type !== "arrow") {
+      drawRect(ctx, x2, y1, rectWidth, -rectHeight);
+      drawRect(ctx, x1, y2, -rectWidth, rectHeight);
+    }
   }
 };
 
@@ -186,7 +194,7 @@ const drawSelectionArea = (canvasCtx: CanvasRenderingContext2D) => {
   const [x1, x2, y1, y2] = history.getSelectionData();
   drawSelectedArea(
     canvasCtx,
-    { x: x1, y: y1, width: x2 - x1, height: y2 - y1 },
+    { x: x1, y: y1, width: x2 - x1, height: y2 - y1, type: "selection" },
     false
   );
 };

@@ -166,36 +166,53 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       // 移动、修改选择元素
       if (drawType === "selection" && hasSelected.current) {
         const selectedList = history.data.filter((d) => d.isSelected);
-        if (cursorType === "nesw-resize") {
-          selectedList.forEach((s) => {
-            if (resizePositon.current === "top") {
-              s.y = s.y + height;
-              s.width = s.width + width;
-              s.height = s.height - height;
+        selectedList.forEach((s) => {
+          // 改变箭头的情况
+          if (
+            s.type === "arrow" &&
+            ["nesw-resize", "nwse-resize"].includes(cursorType)
+          ) {
+            if (
+              (cursorType === "nesw-resize" &&
+                ((s.width > 0 && resizePositon.current === "top") ||
+                  (s.width < 0 && resizePositon.current === "bottom"))) ||
+              (cursorType === "nwse-resize" &&
+                ((s.width < 0 && resizePositon.current === "top") ||
+                  (s.width > 0 && resizePositon.current === "bottom")))
+            ) {
+              s.width += width;
+              s.height += height;
             } else {
-              s.height = s.height + height;
-              s.x = s.x + width;
-              s.width = s.width - width;
+              s.x += width;
+              s.y += height;
+              s.width -= width;
+              s.height -= height;
             }
-          });
-        } else if (cursorType === "nwse-resize") {
-          selectedList.forEach((s) => {
+          } else if (cursorType === "nesw-resize") {
             if (resizePositon.current === "top") {
-              s.x = s.x + width;
-              s.y = s.y + height;
-              s.width = s.width - width;
-              s.height = s.height - height;
+              s.x += width;
+              s.y += height;
+              s.width -= width;
+              s.height -= height;
             } else {
-              s.width = s.width + width;
-              s.height = s.height + height;
+              s.width += width;
+              s.height += height;
             }
-          });
-        } else {
-          selectedList.forEach((s) => {
-            s.x = s.x + width;
-            s.y = s.y + height;
-          });
-        }
+          } else if (cursorType === "nwse-resize") {
+            if (resizePositon.current === "top") {
+              s.x += width;
+              s.y += height;
+              s.width -= width;
+              s.height -= height;
+            } else {
+              s.width += width;
+              s.height += height;
+            }
+          } else {
+            s.x += width;
+            s.y += height;
+          }
+        });
 
         if (
           offsetX !== coordinate.current.x ||
@@ -241,7 +258,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       }
       canMousemove.current = false;
       const { offsetX, offsetY } = e;
-      // 没有移动的情况
+      // 没有移动鼠标的情况
+      // 改变和移动元素的情况
       if (
         offsetX === coordinate.current.x &&
         offsetY === coordinate.current.y
