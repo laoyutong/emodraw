@@ -152,7 +152,7 @@ export const getSelectionRectType = ({
   const [x1, x2, y1, y2, isArrowSelected] = history.getSelectionData();
 
   if (isArrowSelected) {
-    if (x1 > x2 && y1 > y2) {
+    if (x1 >= x2 && y1 > y2) {
       if (isInRectSelection(x, x2, false) && isInRectSelection(y, y2, false)) {
         return [CURSOR_CONFIG.nwseResize, "top"];
       }
@@ -160,7 +160,7 @@ export const getSelectionRectType = ({
       if (isInRectSelection(x, x1, true) && isInRectSelection(y, y1, true)) {
         return [CURSOR_CONFIG.nwseResize, "bottom"];
       }
-    } else if (x1 > x2 && y1 < y2) {
+    } else if (x1 >= x2 && y1 < y2) {
       if (isInRectSelection(x, x2, false) && isInRectSelection(y, y2, true)) {
         return [CURSOR_CONFIG.neswResize, "bottom"];
       }

@@ -24,6 +24,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const isSelection = useRef(false);
   const isSelectedArea = useRef(false);
   const resizePositon = useRef<"top" | "bottom">();
+  const arrowResizeType = useRef<"head" | "foot">();
   const isMoveing = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
 
@@ -99,6 +100,16 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         if (rectType) {
           resizePositon.current = rectType[1];
           hasSelected.current = true;
+          // 获取点击的是箭头的头部还是尾部
+          const selectedData = history.data.filter((d) => d.isSelected);
+          if (selectedData.length === 1 && selectedData[0].type === "arrow") {
+            const arrowData = selectedData[0];
+            arrowResizeType.current =
+              (arrowData.height <= 0 && resizePositon.current === "top") ||
+              (arrowData.height > 0 && resizePositon.current === "bottom")
+                ? "head"
+                : "foot";
+          }
           return;
         }
 
@@ -166,53 +177,50 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       // 移动、修改选择元素
       if (drawType === "selection" && hasSelected.current) {
         const selectedList = history.data.filter((d) => d.isSelected);
-        selectedList.forEach((s) => {
-          // 改变箭头的情况
-          if (
-            s.type === "arrow" &&
-            ["nesw-resize", "nwse-resize"].includes(cursorType)
-          ) {
-            if (
-              (cursorType === "nesw-resize" &&
-                ((s.width > 0 && resizePositon.current === "top") ||
-                  (s.width < 0 && resizePositon.current === "bottom"))) ||
-              (cursorType === "nwse-resize" &&
-                ((s.width < 0 && resizePositon.current === "top") ||
-                  (s.width > 0 && resizePositon.current === "bottom")))
-            ) {
-              s.width += width;
-              s.height += height;
-            } else {
-              s.x += width;
-              s.y += height;
-              s.width -= width;
-              s.height -= height;
-            }
-          } else if (cursorType === "nesw-resize") {
-            if (resizePositon.current === "top") {
-              s.y += height;
-              s.width += width;
-              s.height -= height;
-            } else {
-              s.height += height;
-              s.x += width;
-              s.width -= width;
-            }
-          } else if (cursorType === "nwse-resize") {
-            if (resizePositon.current === "top") {
-              s.x += width;
-              s.y += height;
-              s.width -= width;
-              s.height -= height;
-            } else {
-              s.width += width;
-              s.height += height;
+        if (["nesw-resize", "nwse-resize"].includes(cursorType)) {
+          if (selectedList.length === 1) {
+            const s = selectedList[0];
+            if (s.type === "arrow") {
+              if (arrowResizeType.current === "head") {
+                s.width += width;
+                s.height += height;
+              } else {
+                s.x += width;
+                s.y += height;
+                s.width -= width;
+                s.height -= height;
+              }
+            } else if (cursorType === "nesw-resize") {
+              if (resizePositon.current === "top") {
+                s.y += height;
+                s.width += width;
+                s.height -= height;
+              } else {
+                s.height += height;
+                s.x += width;
+                s.width -= width;
+              }
+            } else if (cursorType === "nwse-resize") {
+              if (resizePositon.current === "top") {
+                s.x += width;
+                s.y += height;
+                s.width -= width;
+                s.height -= height;
+              } else {
+                s.width += width;
+                s.height += height;
+              }
             }
           } else {
+            // TODO 批量修改
+          }
+        } else {
+          // 批量移动
+          selectedList.forEach((s) => {
             s.x += width;
             s.y += height;
-          }
-        });
+          });
+        }
 
         if (
           offsetX !== coordinate.current.x ||
