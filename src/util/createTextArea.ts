@@ -24,6 +24,9 @@ const createTextArea = (
     fontSize: DEFAULT_FONT_SIZE + "px",
     lineHeight: "1em",
     fontFamily: DEFAULT_FONT_FAMILY,
+    width: `${window.innerWidth - x}px`,
+    whiteSpace: "nowrap",
+    overflowX: "hidden",
   });
 
   textarea.onkeydown = (e) => {
