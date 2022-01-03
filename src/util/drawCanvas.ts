@@ -181,11 +181,13 @@ const drawSelectedArea = (
     const rectWidth = width > 0 ? SELECTION_RECT_WIDTH : -SELECTION_RECT_WIDTH;
     const rectHeight =
       height > 0 ? SELECTION_RECT_WIDTH : -SELECTION_RECT_WIDTH;
-    drawRect(ctx, x1, y1, -rectWidth, -rectHeight);
-    drawRect(ctx, x2, y2, rectWidth, rectHeight);
-    if (type !== "arrow") {
-      drawRect(ctx, x2, y1, rectWidth, -rectHeight);
-      drawRect(ctx, x1, y2, -rectWidth, rectHeight);
+    if (type !== "text") {
+      drawRect(ctx, x1, y1, -rectWidth, -rectHeight);
+      drawRect(ctx, x2, y2, rectWidth, rectHeight);
+      if (type !== "arrow") {
+        drawRect(ctx, x2, y1, rectWidth, -rectHeight);
+        drawRect(ctx, x1, y2, -rectWidth, rectHeight);
+      }
     }
   }
 };
