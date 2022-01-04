@@ -6,5 +6,6 @@ export {
   getSelectionArea,
   isInSelectionArea,
   getSelectionRectType,
+  getClickText
 } from "./selection";
 export { splitContent } from "./helper";

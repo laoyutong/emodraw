@@ -12,6 +12,7 @@ import {
   getSelectionElement,
   getSelectionArea,
   getSelectionRectType,
+  getClickText,
   splitContent,
 } from "@/util";
 import type { Coordinate } from "@/type";
@@ -37,39 +38,51 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     }
   };
 
-  const createText = ({ x, y }: Coordinate) => {
-    createTextArea(coordinate.current, (v) => {
-      if (v.trim()) {
-        const lines = splitContent(v);
-        let maxWidth = 0;
-        lines.forEach((line) => {
-          if (canvasCtx.current) {
-            const { width } = canvasCtx.current.measureText(line);
-            if (width > maxWidth) {
-              maxWidth = width;
+  const createText = ({ x, y }: Coordinate, initialValue?: string) => {
+    createTextArea(
+      { x, y },
+      (v) => {
+        if (v.trim()) {
+          const lines = splitContent(v);
+          let maxWidth = 0;
+          lines.forEach((line) => {
+            if (canvasCtx.current) {
+              const { width } = canvasCtx.current.measureText(line);
+              if (width > maxWidth) {
+                maxWidth = width;
+              }
             }
-          }
-        });
-        history.addDrawData({
-          type: "text",
-          id: nanoid(),
-          x,
-          y,
-          content: v,
-          width: Math.floor(maxWidth),
-          height: lines.length * DEFAULT_FONT_SIZE,
-          isSelected: false,
-        });
-        history.storageDrawData();
-        resetCanvas();
-      }
-    });
+          });
+          history.addDrawData({
+            type: "text",
+            id: nanoid(),
+            x,
+            y,
+            content: v,
+            width: Math.floor(maxWidth),
+            height: lines.length * DEFAULT_FONT_SIZE,
+            isSelected: false,
+          });
+          history.storageDrawData();
+          resetCanvas();
+        }
+      },
+      initialValue
+    );
   };
 
   const dblclickFn = useRef<(x: number, y: number) => void>();
   dblclickFn.current = (x: number, y: number) => {
     if (drawType === "selection") {
-      createText({ x, y });
+      const textElement = getClickText({ x, y });
+      history.data.forEach((d) => (d.isSelected = false));
+      if (textElement) {
+        history.data = history.data.filter((d) => d.id !== textElement.id);
+        createText({ x: textElement.x, y: textElement.y }, textElement.content);
+      } else {
+        createText({ x, y });
+      }
+      resetCanvas();
     }
   };
 

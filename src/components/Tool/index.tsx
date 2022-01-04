@@ -10,7 +10,7 @@ const Tool = (): JSX.Element => {
 
   useKeydown((key) => {
     const index = +key - 1;
-    if (!isNaN(index) && index < iconList.length) {
+    if (!isNaN(index) && index !== -1 && index < iconList.length) {
       setDrawType(iconList[index].type);
     }
   });

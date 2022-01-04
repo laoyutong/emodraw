@@ -1,6 +1,6 @@
 import { history } from "@/util";
 import { SELECTION_RECT_WIDTH, SELECTION_GAP, CURSOR_CONFIG } from "@/config";
-import type { Coordinate, CursorType } from "@/type";
+import type { Coordinate, CursorType, TextDrawData } from "@/type";
 
 const GAP = 5;
 
@@ -200,6 +200,17 @@ export const getSelectionRectType = ({
   }
   if (isInRectSelection(x, x1, true) && isInRectSelection(y, y2, false)) {
     return [CURSOR_CONFIG.neswResize, "top"];
+  }
+  return null;
+};
+
+export const getClickText = ({ x, y }: Coordinate): TextDrawData | null => {
+  const textList = history.data.filter((d) => d.type === "text");
+  for (let i = 0; i < textList.length; i++) {
+    const d = textList[i];
+    if (x >= d.x && x <= d.x + d.width && y >= d.y && y <= d.y + d.height) {
+      return d as TextDrawData;
+    }
   }
   return null;
 };

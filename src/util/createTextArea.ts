@@ -3,7 +3,8 @@ import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from "@/config";
 
 const createTextArea = (
   { x, y }: Coordinate,
-  onChange: (value: string) => void
+  onChange: (value: string) => void,
+  initialValue?: string
 ) => {
   const oldTextarea = document.querySelector("textarea");
   if (oldTextarea) {
@@ -29,6 +30,11 @@ const createTextArea = (
     overflowX: "hidden",
   });
 
+  if (initialValue) {
+    textarea.value = initialValue;
+    textarea.setSelectionRange(0, initialValue.length);
+  }
+
   textarea.onkeydown = (e) => {
     e.stopPropagation();
   };
@@ -37,11 +43,9 @@ const createTextArea = (
     textarea.style.height = textarea.scrollHeight + "px";
   };
 
-  textarea.onblur = () => {
-    document.body.removeChild(textarea);
-  };
-  textarea.onchange = (e: any) => {
+  textarea.onblur = (e: any) => {
     onChange(e.target.value);
+    document.body.removeChild(textarea);
   };
 
   document.body.appendChild(textarea);
