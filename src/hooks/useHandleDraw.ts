@@ -30,6 +30,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const arrowResizeType = useRef<"head" | "foot">();
   const isMoveing = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
+  const coordinateCache = useRef<Coordinate>({ x: 0, y: 0 });
 
   const resetCanvas = () => {
     if (canvasCtx.current) {
@@ -53,9 +54,10 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
               }
             }
           });
+          const id = nanoid();
           history.addDrawData({
             type: "text",
-            id: nanoid(),
+            id,
             x,
             y,
             content: v,
@@ -63,6 +65,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
             height: lines.length * DEFAULT_FONT_SIZE,
             isSelected: false,
           });
+          history.addOperateStack({ type: "ADD", selectedIds: id });
           history.storageDrawData();
           resetCanvas();
         }
@@ -106,7 +109,6 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   useKeydown((key, metaKey) => {
     if (metaKey && key === "z") {
       history.revokeDrawData();
-      history.storageDrawData();
       resetCanvas();
     }
     if (key === "Backspace") {
@@ -118,7 +120,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const mousedownFn = useRef<MoveEventFn>();
   mousedownFn.current = (e: MouseEvent) => {
     const { offsetX, offsetY } = e;
-    coordinate.current = { x: offsetX, y: offsetY };
+    coordinate.current = coordinateCache.current = { x: offsetX, y: offsetY };
     if (drawType === "text") {
       setDrawType("selection");
       createText({ x: offsetX, y: offsetY });
@@ -297,17 +299,30 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     // 没有移动鼠标的情况
     // 改变和移动元素的情况
     if (offsetX === coordinate.current.x && offsetY === coordinate.current.y) {
-      drawType !== "selection" && history.revokeDrawData();
-      if (!isMoveing.current) {
+      drawType !== "selection" && history.popDrawData();
+      if (isMoveing.current) {
+        history.addOperateStack({
+          type: "MOVE",
+          selectedIds: history.data
+            .filter((d) => d.isSelected)
+            .map((d) => d.id),
+          payload: {
+            x: offsetX - coordinateCache.current.x,
+            y: offsetY - coordinateCache.current.y,
+          },
+        });
+      } else {
         isSelectedArea.current = false;
       }
     } else {
       if (drawType !== "selection") {
-        history.data[history.data.length - 1].isSelected = true;
+        const activeData = history.data[history.data.length - 1];
+        activeData.isSelected = true;
+        history.addOperateStack({ type: "ADD", selectedIds: activeData.id });
         setDrawType("selection");
       } else {
         // 范围selection
-        history.revokeDrawData();
+        history.popDrawData();
       }
       resetCanvas();
     }

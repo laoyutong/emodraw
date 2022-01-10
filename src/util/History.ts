@@ -1,14 +1,55 @@
 import { LOCAL_STORAGE_KEY } from "@/config";
 import type { DrawData } from "@/type";
 
+type OperateType = "ADD" | "MOVE" | "RESIZE" | "DELETE";
+
+interface OperateStack {
+  type: OperateType;
+  selectedIds?: string[] | string;
+  payload?: Partial<DrawData>[] | Partial<DrawData>;
+}
+
+interface AddOperate {
+  type: "ADD";
+  selectedIds: string;
+}
+
+interface DeleteOperate {
+  type: "DELETE";
+  payload: DrawData[];
+}
+
+interface MoveOperate {
+  type: "MOVE";
+  selectedIds: string[];
+  payload: Pick<DrawData, "x" | "y">;
+}
+
+interface ResizeOperate {
+  type: "RESIZE";
+  selectedIds: string[];
+  payload: DrawData;
+}
+
 class History {
   data: DrawData[];
+  #operateStack: OperateStack[];
 
   constructor() {
-    this.data = this._getStorageData();
+    this.data = this.#getStorageData();
+    this.#operateStack = [];
   }
 
-  private _getStorageData(): DrawData[] {
+  addOperateStack(operate: AddOperate): void;
+  addOperateStack(operate: DeleteOperate): void;
+  addOperateStack(operate: MoveOperate): void;
+  addOperateStack(operate: ResizeOperate): void;
+  addOperateStack(operate: OperateStack) {
+    this.#operateStack.push(operate);
+    console.log("operateStack:::", this.#operateStack);
+  }
+
+  #getStorageData(): DrawData[] {
     let storageData;
     try {
       storageData =
@@ -67,8 +108,36 @@ class History {
     this.data.push(data);
   }
 
-  revokeDrawData() {
+  popDrawData() {
     this.data.pop();
+  }
+
+  revokeDrawData() {
+    if (this.#operateStack.length > 0) {
+      const operate = this.#operateStack.pop()!;
+      if (operate.type === "DELETE") {
+        this.data.push(...(operate.payload as DeleteOperate["payload"]));
+      }
+      if (operate.type === "ADD") {
+        this.data = this.data.filter((d) => operate.selectedIds !== d.id);
+      }
+      if (operate.type === "MOVE") {
+        const { x, y } = operate.payload as MoveOperate["payload"];
+        this.data
+          .filter((d) =>
+            (operate.selectedIds as MoveOperate["selectedIds"]).includes(d.id)
+          )
+          .forEach((d) => {
+            d.x -= x;
+            d.y -= y;
+            d.isSelected = true;
+          });
+      }
+      if (operate.type === "RESIZE") {
+        // TODO
+      }
+      this.storageDrawData();
+    }
   }
 
   storageDrawData() {
@@ -93,7 +162,16 @@ class History {
   }
 
   delete() {
-    this.data = this.data.filter((item) => !item.isSelected);
+    const deleteList: DrawData[] = [];
+    this.data = this.data.filter((item) => {
+      if (item.isSelected) {
+        deleteList.push({ ...item, isSelected: false });
+        return false;
+      } else {
+        return true;
+      }
+    });
+    this.addOperateStack({ type: "DELETE", payload: deleteList });
     this.storageDrawData();
   }
 }
