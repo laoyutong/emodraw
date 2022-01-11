@@ -46,7 +46,6 @@ class History {
   addOperateStack(operate: ResizeOperate): void;
   addOperateStack(operate: OperateStack) {
     this.#operateStack.push(operate);
-    console.log("operateStack:::", this.#operateStack);
   }
 
   #getStorageData(): DrawData[] {
@@ -123,6 +122,7 @@ class History {
       }
       if (operate.type === "MOVE") {
         const { x, y } = operate.payload as MoveOperate["payload"];
+        this.data.forEach((d) => (d.isSelected = false));
         this.data
           .filter((d) =>
             (operate.selectedIds as MoveOperate["selectedIds"]).includes(d.id)
