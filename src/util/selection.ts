@@ -133,7 +133,11 @@ export const getSelectionArea = (
 };
 
 export const isInSelectionArea = (offsetX: number, offsetY: number) => {
-  const [x1, x2, y1, y2] = history.getSelectionData();
+  const selectionData = history.getSelectionData();
+  if (!selectionData) {
+    return false;
+  }
+  const [x1, x2, y1, y2] = selectionData;
   return offsetX <= x1 && offsetX >= x2 && offsetY <= y1 && offsetY >= y2;
 };
 
@@ -149,8 +153,11 @@ export const getSelectionRectType = ({
   x,
   y,
 }: Coordinate): [CursorType, "top" | "bottom"] | null => {
-  const [x1, x2, y1, y2, isArrowSelected] = history.getSelectionData();
-
+  const selectionData = history.getSelectionData();
+  if (!selectionData) {
+    return null;
+  }
+  const [x1, x2, y1, y2, isArrowSelected] = selectionData;
   if (isArrowSelected) {
     if (x1 >= x2 && y1 > y2) {
       if (isInRectSelection(x, x2, false) && isInRectSelection(y, y2, false)) {

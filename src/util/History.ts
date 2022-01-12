@@ -60,12 +60,15 @@ class History {
     return storageData;
   }
 
-  getSelectionData(): [number, number, number, number, boolean] {
+  getSelectionData(): [number, number, number, number, boolean] | null {
     let x1 = -Infinity;
     let y1 = -Infinity;
     let x2 = Infinity;
     let y2 = Infinity;
     const selectedList = this.data.filter((d) => d.isSelected);
+    if (selectedList.length === 1 && selectedList[0].type === "text") {
+      return null;
+    }
     if (selectedList.length === 1 && selectedList[0].type === "arrow") {
       const arrowData = selectedList[0];
       return [
