@@ -90,8 +90,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   };
 
   useEffect(() => {
-    const fn = ({ offsetX, offsetY }: MouseEvent) => {
-      dblclickFn.current?.(offsetX, offsetY);
+    const fn = ({ pageX, pageY }: MouseEvent) => {
+      dblclickFn.current?.(pageX, pageY);
     };
     document.addEventListener("dblclick", fn);
     return () => document.removeEventListener("dblclick", fn);
@@ -119,20 +119,20 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
 
   const mousedownFn = useRef<MoveEventFn>();
   mousedownFn.current = (e: MouseEvent) => {
-    const { offsetX, offsetY } = e;
-    coordinate.current = coordinateCache.current = { x: offsetX, y: offsetY };
+    const { pageX, pageY } = e;
+    coordinate.current = coordinateCache.current = { x: pageX, y: pageY };
     if (drawType === "text") {
       setDrawType("selection");
-      createText({ x: offsetX, y: offsetY });
+      createText({ x: pageX, y: pageY });
     } else if (drawType === "selection") {
       canMousemove.current = true;
       // 批量移动选择元素
-      if (isSelectedArea.current && isInSelectionArea(offsetX, offsetY)) {
+      if (isSelectedArea.current && isInSelectionArea(pageX, pageY)) {
         hasSelected.current = true;
         return;
       }
       // 调整选择元素的大小
-      const rectType = getSelectionRectType({ x: offsetX, y: offsetY });
+      const rectType = getSelectionRectType({ x: pageX, y: pageY });
       if (rectType) {
         resizePositon.current = rectType[1];
         hasSelected.current = true;
@@ -149,7 +149,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         return;
       }
 
-      const id = getSelectionElement({ x: offsetX, y: offsetY });
+      const id = getSelectionElement({ x: pageX, y: pageY });
       history.data.forEach((d) => (d.isSelected = false));
       hasSelected.current = false;
       if (id) {
@@ -161,8 +161,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         history.addDrawData({
           type: drawType,
           id: nanoid(),
-          x: offsetX,
-          y: offsetY,
+          x: pageX,
+          y: pageY,
           width: 0,
           height: 0,
           isSelected: false,
@@ -175,8 +175,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       history.addDrawData({
         type: drawType,
         id: nanoid(),
-        x: offsetX,
-        y: offsetY,
+        x: pageX,
+        y: pageY,
         width: 0,
         height: 0,
         isSelected: false,
@@ -186,27 +186,27 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
 
   const mousemoveFn = useRef<MoveEventFn>();
   mousemoveFn.current = (e: MouseEvent) => {
-    const { offsetX, offsetY } = e;
+    const { pageX, pageY } = e;
     // hover时改变cursor类型
     if (!canMousemove.current) {
-      const rectType = getSelectionRectType({ x: offsetX, y: offsetY });
+      const rectType = getSelectionRectType({ x: pageX, y: pageY });
       if (rectType) {
         setCursorType(rectType[0]);
         return;
       }
       if (drawType === "selection") {
         const result = isSelectedArea.current
-          ? isInSelectionArea(offsetX, offsetY)
+          ? isInSelectionArea(pageX, pageY)
           : getSelectionElement({
-              x: offsetX,
-              y: offsetY,
+              x: pageX,
+              y: pageY,
             });
         setCursorType(result ? CURSOR_CONFIG.move : CURSOR_CONFIG.default);
       }
       return;
     }
-    const width = offsetX - coordinate.current.x;
-    const height = offsetY - coordinate.current.y;
+    const width = pageX - coordinate.current.x;
+    const height = pageY - coordinate.current.y;
     // 移动、修改选择元素
     if (drawType === "selection" && hasSelected.current) {
       const selectedList = history.data.filter((d) => d.isSelected);
@@ -255,14 +255,11 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         });
       }
 
-      if (
-        offsetX !== coordinate.current.x ||
-        offsetY !== coordinate.current.y
-      ) {
+      if (pageX !== coordinate.current.x || pageY !== coordinate.current.y) {
         isMoveing.current = true;
         coordinate.current = {
-          x: offsetX,
-          y: offsetY,
+          x: pageX,
+          y: pageY,
         };
       }
     } else {
@@ -295,10 +292,10 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       return;
     }
     canMousemove.current = false;
-    const { offsetX, offsetY } = e;
+    const { pageX, pageY } = e;
     // 没有移动鼠标的情况
     // 改变和移动元素的情况
-    if (offsetX === coordinate.current.x && offsetY === coordinate.current.y) {
+    if (pageX === coordinate.current.x && pageY === coordinate.current.y) {
       drawType !== "selection" && history.popDrawData();
       if (isMoveing.current) {
         history.addOperateStack({
@@ -307,8 +304,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
             .filter((d) => d.isSelected)
             .map((d) => d.id),
           payload: {
-            x: offsetX - coordinateCache.current.x,
-            y: offsetY - coordinateCache.current.y,
+            x: pageX - coordinateCache.current.x,
+            y: pageY - coordinateCache.current.y,
           },
         });
       } else {
@@ -332,7 +329,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       !isSelection.current
     ) {
       history.data.forEach((d) => (d.isSelected = false));
-      const id = getSelectionElement({ x: offsetX, y: offsetY });
+      const id = getSelectionElement({ x: pageX, y: pageY });
       if (id) {
         history.data.find((d) => d.id === id)!.isSelected = true;
       } else {
