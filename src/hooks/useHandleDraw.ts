@@ -238,6 +238,15 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       resetCanvas();
     }
 
+    if (metaKey && key === "a") {
+      history.data.forEach((d) => (d.isSelected = true));
+      if (history.data.length > 1) {
+        isSelectedArea.current = true;
+      }
+      history.storageDrawData();
+      resetCanvas();
+    }
+
     if (key === "Backspace") {
       history.delete();
       resetCanvas();
