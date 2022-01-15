@@ -31,6 +31,8 @@ interface ResizeOperate {
   payload: DrawData;
 }
 
+type SelectionData = [number, number, number, number, boolean];
+
 class History {
   data: DrawData[];
   #operateStack: OperateStack[];
@@ -60,7 +62,7 @@ class History {
     return storageData;
   }
 
-  getSelectionData(): [number, number, number, number, boolean] | null {
+  getSelectionData(): SelectionData | null {
     let x1 = -Infinity;
     let y1 = -Infinity;
     let x2 = Infinity;

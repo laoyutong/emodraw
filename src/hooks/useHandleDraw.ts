@@ -15,7 +15,7 @@ import {
   getClickText,
   splitContent,
 } from "@/util";
-import type { Coordinate } from "@/type";
+import type { Coordinate, DrawData } from "@/type";
 
 type MoveEventFn = (e: MouseEvent) => void;
 
@@ -31,12 +31,137 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const isMoveing = useRef(false);
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
   const coordinateCache = useRef<Coordinate>({ x: 0, y: 0 });
+  const lastResizeData = useRef<Coordinate>({ x: 0, y: 0 });
 
   const resetCanvas = () => {
     if (canvasCtx.current) {
       canvasCtx.current.clearRect(0, 0, window.innerWidth, window.innerHeight);
       drawCanvas(canvasCtx.current);
     }
+  };
+
+  const singleElementResize = (
+    selectedElement: DrawData,
+    width: number,
+    height: number
+  ) => {
+    if (selectedElement.type === "arrow") {
+      if (arrowResizeType.current === "head") {
+        selectedElement.width += width;
+        selectedElement.height += height;
+      } else {
+        selectedElement.x += width;
+        selectedElement.y += height;
+        selectedElement.width -= width;
+        selectedElement.height -= height;
+      }
+    } else if (cursorType === "nesw-resize") {
+      if (resizePositon.current === "top") {
+        selectedElement.y += height;
+        selectedElement.width += width;
+        selectedElement.height -= height;
+      } else {
+        selectedElement.height += height;
+        selectedElement.x += width;
+        selectedElement.width -= width;
+      }
+    } else if (cursorType === "nwse-resize") {
+      if (resizePositon.current === "top") {
+        selectedElement.x += width;
+        selectedElement.y += height;
+        selectedElement.width -= width;
+        selectedElement.height -= height;
+      } else {
+        selectedElement.width += width;
+        selectedElement.height += height;
+      }
+    }
+  };
+
+  const ManyElementsResize = (
+    selectedElements: DrawData[],
+    pageX: number,
+    pageY: number
+  ) => {
+    const { x, y } = coordinateCache.current;
+    const disX = pageX - x;
+    const disY = pageY - y;
+    const isDisXLarge = Math.abs(disX) > Math.abs(disY);
+    let width = 0,
+      height = 0;
+    const movePoint: Coordinate = { x: 0, y: 0 };
+    const otherPoint: Coordinate = { x: 0, y: 0 };
+    const selectionData = history.getSelectionData()!;
+    const selectionWidth = selectionData[0] - selectionData[1];
+    const selectionHeight = selectionData[2] - selectionData[3];
+    if (cursorType === "nesw-resize") {
+      width = isDisXLarge ? -disY : disX;
+      height = isDisXLarge ? disY : -disX;
+      if (resizePositon.current === "top") {
+        movePoint.x = selectionData[0];
+        otherPoint.x = selectionData[1];
+        movePoint.y = selectionData[3];
+        otherPoint.y = selectionData[2];
+      } else {
+        movePoint.x = selectionData[1];
+        otherPoint.x = selectionData[0];
+        movePoint.y = selectionData[2];
+        otherPoint.y = selectionData[3];
+      }
+    } else {
+      width = isDisXLarge ? disY : disX;
+      height = isDisXLarge ? disY : disX;
+      if (resizePositon.current === "top") {
+        movePoint.x = selectionData[1];
+        otherPoint.x = selectionData[0];
+        movePoint.y = selectionData[3];
+        otherPoint.y = selectionData[2];
+      } else {
+        movePoint.x = selectionData[0];
+        otherPoint.x = selectionData[1];
+        movePoint.y = selectionData[2];
+        otherPoint.y = selectionData[3];
+      }
+    }
+
+    selectedElements.forEach((d) => {
+      const rateX = Math.abs(d.x - otherPoint.x) / selectionWidth;
+      const rateW = Math.abs(d.x + d.width - otherPoint.x) / selectionWidth;
+      const rateY = Math.abs(d.y - otherPoint.y) / selectionHeight;
+      const rateH = Math.abs(d.y + d.height - otherPoint.y) / selectionHeight;
+      d.x += (width - lastResizeData.current.x) * rateX;
+      d.y += (height - lastResizeData.current.y) * rateY;
+      d.width += (width - lastResizeData.current.x) * (rateW - rateX);
+      d.height += (height - lastResizeData.current.y) * (rateH - rateY);
+    });
+    lastResizeData.current = { x: width, y: height };
+  };
+
+  const resizeElement = (
+    selectedElements: DrawData[],
+    pageX: number,
+    pageY: number
+  ) => {
+    if (selectedElements.length === 1) {
+      singleElementResize(
+        selectedElements[0],
+        pageX - coordinate.current.x,
+        pageY - coordinate.current.y
+      );
+    } else {
+      ManyElementsResize(selectedElements, pageX, pageY);
+    }
+  };
+
+  const moveElements = (
+    selectedElements: DrawData[],
+    width: number,
+    height: number
+  ) => {
+    selectedElements.forEach((s) => {
+      s.x += width;
+      s.y += height;
+    });
   };
 
   const createText = ({ x, y }: Coordinate, initialValue?: string) => {
@@ -211,48 +336,9 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     if (drawType === "selection" && hasSelected.current) {
       const selectedList = history.data.filter((d) => d.isSelected);
       if (["nesw-resize", "nwse-resize"].includes(cursorType)) {
-        if (selectedList.length === 1) {
-          const s = selectedList[0];
-          if (s.type === "arrow") {
-            if (arrowResizeType.current === "head") {
-              s.width += width;
-              s.height += height;
-            } else {
-              s.x += width;
-              s.y += height;
-              s.width -= width;
-              s.height -= height;
-            }
-          } else if (cursorType === "nesw-resize") {
-            if (resizePositon.current === "top") {
-              s.y += height;
-              s.width += width;
-              s.height -= height;
-            } else {
-              s.height += height;
-              s.x += width;
-              s.width -= width;
-            }
-          } else if (cursorType === "nwse-resize") {
-            if (resizePositon.current === "top") {
-              s.x += width;
-              s.y += height;
-              s.width -= width;
-              s.height -= height;
-            } else {
-              s.width += width;
-              s.height += height;
-            }
-          }
-        } else {
-          // TODO 批量修改
-        }
+        resizeElement(selectedList, pageX, pageY);
       } else {
-        // 批量移动
-        selectedList.forEach((s) => {
-          s.x += width;
-          s.y += height;
-        });
+        moveElements(selectedList, width, height);
       }
 
       if (pageX !== coordinate.current.x || pageY !== coordinate.current.y) {
@@ -339,6 +425,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     }
     isMoveing.current = false;
     isSelection.current = false;
+    lastResizeData.current = { x: 0, y: 0 };
     history.storageDrawData();
   };
 

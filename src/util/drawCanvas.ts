@@ -193,7 +193,11 @@ const drawSelectedArea = (
 };
 
 const drawSelectionArea = (canvasCtx: CanvasRenderingContext2D) => {
-  const [x1, x2, y1, y2] = history.getSelectionData();
+  const result = history.getSelectionData();
+  if (!result) {
+    return;
+  }
+  const [x1, x2, y1, y2] = result;
   drawSelectedArea(
     canvasCtx,
     { x: x1, y: y1, width: x2 - x1, height: y2 - y1, type: "selection" },
