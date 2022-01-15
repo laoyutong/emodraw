@@ -27,8 +27,7 @@ interface MoveOperate {
 
 interface ResizeOperate {
   type: "RESIZE";
-  selectedIds: string[];
-  payload: DrawData;
+  payload: DrawData[];
 }
 
 type SelectionData = [number, number, number, number, boolean];
@@ -139,7 +138,11 @@ class History {
           });
       }
       if (operate.type === "RESIZE") {
-        // TODO
+        const selectedList = operate.payload as DeleteOperate["payload"];
+        const selectedIds = selectedList.map((s) => s.id);
+        this.data = this.data
+          .filter((d) => !selectedIds.includes(d.id))
+          .concat(selectedList);
       }
       this.storageDrawData();
     }

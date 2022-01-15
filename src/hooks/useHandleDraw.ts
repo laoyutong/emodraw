@@ -28,10 +28,11 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const isSelectedArea = useRef(false);
   const resizePositon = useRef<"top" | "bottom">();
   const arrowResizeType = useRef<"head" | "foot">();
-  const isMoveing = useRef(false);
+  const selectedType = useRef<"move" | "resize">();
   const coordinate = useRef<Coordinate>({ x: 0, y: 0 });
   const coordinateCache = useRef<Coordinate>({ x: 0, y: 0 });
   const lastResizeData = useRef<Coordinate>({ x: 0, y: 0 });
+  const resizeDataCache = useRef<DrawData[]>([]);
 
   const resetCanvas = () => {
     if (canvasCtx.current) {
@@ -236,11 +237,19 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       history.revokeDrawData();
       resetCanvas();
     }
+
     if (key === "Backspace") {
       history.delete();
       resetCanvas();
     }
   });
+
+  const resetData = () => {
+    selectedType.current = undefined;
+    isSelection.current = false;
+    lastResizeData.current = { x: 0, y: 0 };
+    resizeDataCache.current = [];
+  };
 
   const mousedownFn = useRef<MoveEventFn>();
   mousedownFn.current = (e: MouseEvent) => {
@@ -263,6 +272,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         hasSelected.current = true;
         // 获取点击的是箭头的头部还是尾部
         const selectedData = history.data.filter((d) => d.isSelected);
+        resizeDataCache.current = selectedData.map((s) => ({ ...s }));
         if (selectedData.length === 1 && selectedData[0].type === "arrow") {
           const arrowData = selectedData[0];
           arrowResizeType.current =
@@ -335,14 +345,15 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     // 移动、修改选择元素
     if (drawType === "selection" && hasSelected.current) {
       const selectedList = history.data.filter((d) => d.isSelected);
-      if (["nesw-resize", "nwse-resize"].includes(cursorType)) {
+      const isResize = ["nesw-resize", "nwse-resize"].includes(cursorType);
+      if (isResize) {
         resizeElement(selectedList, pageX, pageY);
       } else {
         moveElements(selectedList, width, height);
       }
 
       if (pageX !== coordinate.current.x || pageY !== coordinate.current.y) {
-        isMoveing.current = true;
+        selectedType.current = isResize ? "resize" : "move";
         coordinate.current = {
           x: pageX,
           y: pageY,
@@ -383,17 +394,24 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     // 改变和移动元素的情况
     if (pageX === coordinate.current.x && pageY === coordinate.current.y) {
       drawType !== "selection" && history.popDrawData();
-      if (isMoveing.current) {
-        history.addOperateStack({
-          type: "MOVE",
-          selectedIds: history.data
-            .filter((d) => d.isSelected)
-            .map((d) => d.id),
-          payload: {
-            x: pageX - coordinateCache.current.x,
-            y: pageY - coordinateCache.current.y,
-          },
-        });
+      if (selectedType.current) {
+        if (selectedType.current === "move") {
+          history.addOperateStack({
+            type: "MOVE",
+            selectedIds: history.data
+              .filter((d) => d.isSelected)
+              .map((d) => d.id),
+            payload: {
+              x: pageX - coordinateCache.current.x,
+              y: pageY - coordinateCache.current.y,
+            },
+          });
+        } else {
+          history.addOperateStack({
+            type: "RESIZE",
+            payload: resizeDataCache.current,
+          });
+        }
       } else {
         isSelectedArea.current = false;
       }
@@ -411,7 +429,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     }
     if (
       drawType === "selection" &&
-      !isMoveing.current &&
+      !selectedType.current &&
       !isSelection.current
     ) {
       history.data.forEach((d) => (d.isSelected = false));
@@ -423,9 +441,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       }
       resetCanvas();
     }
-    isMoveing.current = false;
-    isSelection.current = false;
-    lastResizeData.current = { x: 0, y: 0 };
+    resetData();
     history.storageDrawData();
   };
 
