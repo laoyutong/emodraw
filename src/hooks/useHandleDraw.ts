@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 
 import { useKeydown } from "./";
 import { drawTypeContext, cursorTypeContext } from "@/context";
-import { CURSOR_CONFIG, DEFAULT_FONT_SIZE } from "@/config";
+import { CURSOR_CONFIG, DEFAULT_FONT_SIZE, MIN_RESIZE_LENGTH } from "@/config";
 import {
   drawCanvas,
   history,
@@ -85,16 +85,39 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     pageY: number
   ) => {
     const { x, y } = coordinateCache.current;
+    const selectionData = history.getSelectionData()!;
+    const selectionWidth = selectionData[0] - selectionData[1];
+    const selectionHeight = selectionData[2] - selectionData[3];
+
     const disX = pageX - x;
     const disY = pageY - y;
+
+    // 批量修改有最小限制
+    if (
+      (selectionWidth <= MIN_RESIZE_LENGTH &&
+        ((disX <= lastResizeData.current.x &&
+          ((resizePositon.current === "top" && cursorType === "nesw-resize") ||
+            (resizePositon.current === "bottom" &&
+              cursorType === "nwse-resize"))) ||
+          (disX >= lastResizeData.current.x &&
+            ((resizePositon.current === "bottom" &&
+              cursorType === "nesw-resize") ||
+              (resizePositon.current === "top" &&
+                cursorType === "nwse-resize"))))) ||
+      (selectionHeight <= MIN_RESIZE_LENGTH &&
+        ((disY <= lastResizeData.current.y &&
+          resizePositon.current === "bottom") ||
+          (disY >= lastResizeData.current.y &&
+            resizePositon.current === "top")))
+    ) {
+      return;
+    }
+
     const isDisXLarge = Math.abs(disX) > Math.abs(disY);
     let width = 0,
       height = 0;
     const movePoint: Coordinate = { x: 0, y: 0 };
     const otherPoint: Coordinate = { x: 0, y: 0 };
-    const selectionData = history.getSelectionData()!;
-    const selectionWidth = selectionData[0] - selectionData[1];
-    const selectionHeight = selectionData[2] - selectionData[3];
     if (cursorType === "nesw-resize") {
       width = isDisXLarge ? -disY : disX;
       height = isDisXLarge ? disY : -disX;
