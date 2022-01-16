@@ -85,79 +85,57 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     pageY: number
   ) => {
     const { x, y } = coordinateCache.current;
-    const selectionData = history.getSelectionData()!;
-    const selectionWidth = selectionData[0] - selectionData[1];
-    const selectionHeight = selectionData[2] - selectionData[3];
+    const oppositePoint: Coordinate = { x: 0, y: 0 };
 
     const disX = pageX - x;
     const disY = pageY - y;
 
+    const selectionData = history.getSelectionData()!;
+    const selectionWidth = selectionData[0] - selectionData[1];
+    const selectionHeight = selectionData[2] - selectionData[3];
+
+    const isTopSide = resizePositon.current === "top";
+    const isRightSide =
+      (isTopSide && cursorType === "nesw-resize") ||
+      (resizePositon.current === "bottom" && cursorType === "nwse-resize");
+    const isLeftSide =
+      (resizePositon.current === "bottom" && cursorType === "nesw-resize") ||
+      (isTopSide && cursorType === "nwse-resize");
+
     // 批量修改有最小限制
     if (
       (selectionWidth <= MIN_RESIZE_LENGTH &&
-        ((disX <= lastResizeData.current.x &&
-          ((resizePositon.current === "top" && cursorType === "nesw-resize") ||
-            (resizePositon.current === "bottom" &&
-              cursorType === "nwse-resize"))) ||
-          (disX >= lastResizeData.current.x &&
-            ((resizePositon.current === "bottom" &&
-              cursorType === "nesw-resize") ||
-              (resizePositon.current === "top" &&
-                cursorType === "nwse-resize"))))) ||
+        ((disX <= lastResizeData.current.x && isRightSide) ||
+          (disX >= lastResizeData.current.x && isLeftSide))) ||
       (selectionHeight <= MIN_RESIZE_LENGTH &&
         ((disY <= lastResizeData.current.y &&
           resizePositon.current === "bottom") ||
-          (disY >= lastResizeData.current.y &&
-            resizePositon.current === "top")))
+          (disY >= lastResizeData.current.y && isTopSide)))
     ) {
       return;
     }
 
-    const isDisXLarge = Math.abs(disX) > Math.abs(disY);
     let width = 0,
       height = 0;
-    const movePoint: Coordinate = { x: 0, y: 0 };
-    const otherPoint: Coordinate = { x: 0, y: 0 };
-    if (cursorType === "nesw-resize") {
-      width = isDisXLarge ? -disY : disX;
-      height = isDisXLarge ? disY : -disX;
-      if (resizePositon.current === "top") {
-        movePoint.x = selectionData[0];
-        otherPoint.x = selectionData[1];
-        movePoint.y = selectionData[3];
-        otherPoint.y = selectionData[2];
-      } else {
-        movePoint.x = selectionData[1];
-        otherPoint.x = selectionData[0];
-        movePoint.y = selectionData[2];
-        otherPoint.y = selectionData[3];
-      }
-    } else {
-      width = isDisXLarge ? disY : disX;
-      height = isDisXLarge ? disY : disX;
-      if (resizePositon.current === "top") {
-        movePoint.x = selectionData[1];
-        otherPoint.x = selectionData[0];
-        movePoint.y = selectionData[3];
-        otherPoint.y = selectionData[2];
-      } else {
-        movePoint.x = selectionData[0];
-        otherPoint.x = selectionData[1];
-        movePoint.y = selectionData[2];
-        otherPoint.y = selectionData[3];
-      }
-    }
+    const isDisXLarge = Math.abs(disX) > Math.abs(disY);
+
+    width = isDisXLarge ? (cursorType === "nesw-resize" ? -disY : disY) : disX;
+    height = isDisXLarge ? disY : cursorType === "nesw-resize" ? -disX : disX;
+    oppositePoint.x = selectionData[isRightSide ? 1 : 0];
+    oppositePoint.y = selectionData[isTopSide ? 2 : 3];
 
     selectedElements.forEach((d) => {
-      const rateX = Math.abs(d.x - otherPoint.x) / selectionWidth;
-      const rateW = Math.abs(d.x + d.width - otherPoint.x) / selectionWidth;
-      const rateY = Math.abs(d.y - otherPoint.y) / selectionHeight;
-      const rateH = Math.abs(d.y + d.height - otherPoint.y) / selectionHeight;
+      const rateX = Math.abs(d.x - oppositePoint.x) / selectionWidth;
+      const rateW = Math.abs(d.x + d.width - oppositePoint.x) / selectionWidth;
+      const rateY = Math.abs(d.y - oppositePoint.y) / selectionHeight;
+      const rateH =
+        Math.abs(d.y + d.height - oppositePoint.y) / selectionHeight;
       d.x += (width - lastResizeData.current.x) * rateX;
       d.y += (height - lastResizeData.current.y) * rateY;
       d.width += (width - lastResizeData.current.x) * (rateW - rateX);
       d.height += (height - lastResizeData.current.y) * (rateH - rateY);
     });
+
     lastResizeData.current = { x: width, y: height };
   };
 
