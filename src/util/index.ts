@@ -9,3 +9,4 @@ export {
   getClickText,
 } from "./selection";
 export { splitContent } from "./helper";
+export { default as mitt } from "./mitt";

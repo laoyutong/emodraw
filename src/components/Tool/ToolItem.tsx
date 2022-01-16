@@ -22,7 +22,7 @@ const ToolItem = ({
       })}
       onClick={changeType}
     >
-      <div className={style["tool-icon"]}>{Icon}</div>
+      <div>{Icon}</div>
       <div className={style["tool-index"]}>{index}</div>
     </div>
   );

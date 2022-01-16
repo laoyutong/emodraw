@@ -14,12 +14,16 @@ import {
   getSelectionRectType,
   getClickText,
   splitContent,
+  mitt,
 } from "@/util";
 import type { Coordinate, DrawData } from "@/type";
 
 type MoveEventFn = (e: MouseEvent) => void;
 
-const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
+const useHandleDraw = (
+  canvasCtx: RefObject<CanvasRenderingContext2D>,
+  canvasIns: RefObject<HTMLCanvasElement>
+) => {
   const { drawType, setDrawType } = useContext(drawTypeContext);
   const { cursorType, setCursorType } = useContext(cursorTypeContext);
   const canMousemove = useRef(false);
@@ -40,6 +44,31 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       drawCanvas(canvasCtx.current);
     }
   };
+
+  useEffect(() => {
+    const clearCanvas = () => {
+      history.data = [];
+      history.storageDrawData();
+      resetCanvas();
+    };
+    const exportCannvas = () => {
+      if (canvasIns.current) {
+        const img = canvasIns.current.toDataURL();
+        const a = document.createElement("a");
+        a.download = "emodraw.jpg";
+        a.href = img;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    };
+    mitt.on("export", exportCannvas);
+    mitt.on("clear", clearCanvas);
+    return () => {
+      mitt.off("export", exportCannvas);
+      mitt.off("clear", clearCanvas);
+    };
+  }, []);
 
   const singleElementResize = (
     selectedElement: DrawData,

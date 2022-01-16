@@ -13,7 +13,7 @@ function App(): JSX.Element {
     }
   }, []);
 
-  useHandleDraw(canvasCtx);
+  useHandleDraw(canvasCtx, canvasIns);
   useResizeCanvas(canvasIns, canvasCtx);
 
   return (
