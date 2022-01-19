@@ -205,19 +205,22 @@ const drawSelectionArea = (canvasCtx: CanvasRenderingContext2D) => {
   );
 };
 
-const drawCanvas = (canvasCtx: CanvasRenderingContext2D) => {
+const drawCanvas = (
+  canvasCtx: CanvasRenderingContext2D,
+  data: DrawData[] = history.data
+) => {
   let isSelectionArea = false;
   const selectedList = history.data.filter((d) => d.isSelected);
   if (selectedList.length > 1) {
     drawSelectionArea(canvasCtx);
     isSelectionArea = true;
   }
-  history.data.forEach((data) => {
-    data.isSelected && drawSelectedArea(canvasCtx, data, isSelectionArea);
-    if (data.type === "text") {
-      drawText(canvasCtx, data);
+  data.forEach((d) => {
+    d.isSelected && drawSelectedArea(canvasCtx, d, isSelectionArea);
+    if (d.type === "text") {
+      drawText(canvasCtx, d);
     } else {
-      drawGragh(canvasCtx, data);
+      drawGragh(canvasCtx, d);
     }
   });
 };

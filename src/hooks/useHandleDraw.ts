@@ -3,7 +3,12 @@ import { nanoid } from "nanoid";
 
 import { useKeydown } from "./";
 import { drawTypeContext, cursorTypeContext } from "@/context";
-import { CURSOR_CONFIG, DEFAULT_FONT_SIZE, MIN_RESIZE_LENGTH } from "@/config";
+import {
+  CURSOR_CONFIG,
+  DEFAULT_FONT_SIZE,
+  MIN_RESIZE_LENGTH,
+  EXPORT_GAP,
+} from "@/config";
 import {
   drawCanvas,
   history,
@@ -15,6 +20,7 @@ import {
   getClickText,
   splitContent,
   mitt,
+  getContentArea,
 } from "@/util";
 import type { Coordinate, DrawData } from "@/type";
 
@@ -52,16 +58,35 @@ const useHandleDraw = (
       resetCanvas();
     };
     const exportCannvas = () => {
-      if (canvasIns.current) {
-        const img = canvasIns.current.toDataURL();
-        const a = document.createElement("a");
-        a.download = "emodraw.jpg";
-        a.href = img;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+      const canvas = document.createElement("canvas");
+      const [x1, x2, y1, y2] = getContentArea(history.data);
+      const exportWidth = x1 - x2 + EXPORT_GAP;
+      const exportHeight = y1 - y2 + EXPORT_GAP;
+      canvas.width = exportWidth;
+      canvas.height = exportHeight;
+      const context = canvas.getContext("2d")!;
+      context.save();
+      context.fillStyle = "white";
+      context.fillRect(0, 0, exportWidth, exportHeight);
+      context.restore();
+
+      drawCanvas(
+        context,
+        history.data.map((d) => ({
+          ...d,
+          x: d.x - x2 + EXPORT_GAP / 2,
+          y: d.y - y2 + EXPORT_GAP / 2,
+        }))
+      );
+      const img = canvas.toDataURL();
+      const a = document.createElement("a");
+      a.download = "emodraw.jpg";
+      a.href = img;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     };
+
     mitt.on("export", exportCannvas);
     mitt.on("clear", clearCanvas);
     return () => {

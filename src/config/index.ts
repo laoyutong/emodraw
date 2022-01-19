@@ -22,3 +22,5 @@ export const SELECTION_RECT_WIDTH = 8;
 export const SELECTION_LINE_DASH = [15, 10];
 
 export const MIN_RESIZE_LENGTH = 20;
+
+export const EXPORT_GAP = 30;

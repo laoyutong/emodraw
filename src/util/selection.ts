@@ -1,6 +1,6 @@
 import { history } from "@/util";
 import { SELECTION_RECT_WIDTH, SELECTION_GAP, CURSOR_CONFIG } from "@/config";
-import type { Coordinate, CursorType, TextDrawData } from "@/type";
+import type { Coordinate, CursorType, DrawData, TextDrawData } from "@/type";
 
 const GAP = 5;
 
@@ -220,4 +220,35 @@ export const getClickText = ({ x, y }: Coordinate): TextDrawData | null => {
     }
   }
   return null;
+};
+
+export const getContentArea = (
+  data: DrawData[]
+): [number, number, number, number] => {
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  let x2 = Infinity;
+  let y2 = Infinity;
+
+  data.forEach((d) => {
+    const [maxDataX, minDataX] =
+      d.width > 0 ? [d.x + d.width, d.x] : [d.x, d.x + d.width];
+    const [maxDataY, minDataY] =
+      d.height > 0 ? [d.y + d.height, d.y] : [d.y, d.y + d.height];
+
+    if (maxDataX > x1) {
+      x1 = maxDataX;
+    }
+    if (maxDataY > y1) {
+      y1 = maxDataY;
+    }
+    if (minDataX < x2) {
+      x2 = minDataX;
+    }
+    if (minDataY < y2) {
+      y2 = minDataY;
+    }
+  });
+
+  return [x1, x2, y1, y2];
 };
