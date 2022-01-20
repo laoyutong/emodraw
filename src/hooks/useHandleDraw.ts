@@ -7,6 +7,7 @@ import {
   CURSOR_CONFIG,
   DEFAULT_FONT_SIZE,
   MIN_RESIZE_LENGTH,
+  DEFAULT_BACKGROUND_COLOR,
   EXPORT_GAP,
 } from "@/config";
 import {
@@ -66,7 +67,7 @@ const useHandleDraw = (
       canvas.height = exportHeight;
       const context = canvas.getContext("2d")!;
       context.save();
-      context.fillStyle = "white";
+      context.fillStyle = DEFAULT_BACKGROUND_COLOR;
       context.fillRect(0, 0, exportWidth, exportHeight);
       context.restore();
 
@@ -80,7 +81,7 @@ const useHandleDraw = (
       );
       const img = canvas.toDataURL();
       const a = document.createElement("a");
-      a.download = "emodraw.jpg";
+      a.download = "emodraw.png";
       a.href = img;
       document.body.appendChild(a);
       a.click();
