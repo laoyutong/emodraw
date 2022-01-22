@@ -318,6 +318,9 @@ const useHandleDraw = (
 
   const mousedownFn = useRef<MoveEventFn>();
   mousedownFn.current = (e: MouseEvent) => {
+    if (e.button === 2) {
+      return;
+    }
     const { pageX, pageY } = e;
     coordinate.current = coordinateCache.current = { x: pageX, y: pageY };
     if (drawType === "text") {
