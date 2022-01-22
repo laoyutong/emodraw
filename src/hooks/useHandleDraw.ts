@@ -112,8 +112,9 @@ const useHandleDraw = (
             const result = JSON.parse(
               (event.target as FileReader).result as string
             );
+            history.addOperateStack({ type: "SET", payload: history.data });
             history.data = result;
-            history.revokeDrawData();
+            history.storageDrawData();
             resetCanvas();
           } catch (_) {}
         };

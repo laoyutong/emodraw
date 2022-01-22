@@ -2,7 +2,7 @@ import { LOCAL_STORAGE_KEY } from "@/config";
 import { getContentArea } from "./";
 import type { DrawData } from "@/type";
 
-type OperateType = "ADD" | "MOVE" | "RESIZE" | "DELETE";
+type OperateType = "ADD" | "MOVE" | "RESIZE" | "DELETE" | "SET";
 
 interface OperateStack {
   type: OperateType;
@@ -17,6 +17,11 @@ interface AddOperate {
 
 interface DeleteOperate {
   type: "DELETE";
+  payload: DrawData[];
+}
+
+interface SetOperate {
+  type: "SET";
   payload: DrawData[];
 }
 
@@ -46,6 +51,7 @@ class History {
   addOperateStack(operate: DeleteOperate): void;
   addOperateStack(operate: MoveOperate): void;
   addOperateStack(operate: ResizeOperate): void;
+  addOperateStack(operate: SetOperate): void;
   addOperateStack(operate: OperateStack) {
     this.#operateStack.push(operate);
   }
@@ -117,6 +123,9 @@ class History {
         this.data = this.data
           .filter((d) => !selectedIds.includes(d.id))
           .concat(selectedList);
+      }
+      if (operate.type === "SET") {
+        this.data = operate.payload as SetOperate["payload"];
       }
       this.storageDrawData();
     }
