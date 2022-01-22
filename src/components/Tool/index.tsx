@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { iconList, iconProps } from "./config";
-import { Export, Delete } from "@icon-park/react";
+import { Export, Delete, Login, AddPic } from "@icon-park/react";
 import { mitt } from "@/util";
 import ToolItem from "./ToolItem";
 import { useKeydown } from "@/hooks";
@@ -8,7 +8,6 @@ import { drawTypeContext } from "@/context";
 import style from "./style.module.less";
 import classnames from "classnames";
 import type { IconList } from "./type";
-
 const Tool = (): JSX.Element => {
   const { drawType, setDrawType } = useContext(drawTypeContext);
 
@@ -31,8 +30,16 @@ const Tool = (): JSX.Element => {
     mitt.emit("clear");
   };
 
-  const exportCanvas = () => {
-    mitt.emit("export");
+  const inportCanvas = () => {
+    mitt.emit("import");
+  };
+
+  const exportAsData = () => {
+    mitt.emit("exportData");
+  };
+
+  const exportAsImage = () => {
+    mitt.emit("exportImage");
   };
 
   return (
@@ -50,7 +57,9 @@ const Tool = (): JSX.Element => {
       </div>
       <div className={classnames(style["container"], style["operate"])}>
         {renderIcon(Delete, clearCanvas)}
-        {renderIcon(Export, exportCanvas)}
+        {renderIcon(Login, inportCanvas)}
+        {renderIcon(Export, exportAsData)}
+        {renderIcon(AddPic, exportAsImage)}
       </div>
     </>
   );

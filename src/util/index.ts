@@ -9,5 +9,5 @@ export {
   getClickText,
   getContentArea,
 } from "./selection";
-export { splitContent } from "./helper";
+export { splitContent, getDownloadUri, downLoad } from "./helper";
 export { default as mitt } from "./mitt";

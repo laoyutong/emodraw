@@ -43,8 +43,8 @@ const createTextArea = (
     textarea.style.height = textarea.scrollHeight + "px";
   };
 
-  textarea.onblur = (e: any) => {
-    onChange(e.target.value);
+  textarea.onblur = (e: Event) => {
+    onChange((e.target as HTMLInputElement).value);
     document.body.removeChild(textarea);
   };
 

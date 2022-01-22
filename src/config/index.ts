@@ -26,3 +26,7 @@ export const SELECTION_LINE_DASH = [15, 10];
 export const MIN_RESIZE_LENGTH = 20;
 
 export const EXPORT_GAP = 30;
+
+export const EXPORT_IMAGE_NAME = "emodraw.png";
+
+export const EXPORT_DATA_NAME = "emodraw";

@@ -9,6 +9,8 @@ import {
   MIN_RESIZE_LENGTH,
   DEFAULT_BACKGROUND_COLOR,
   EXPORT_GAP,
+  EXPORT_DATA_NAME,
+  EXPORT_IMAGE_NAME,
 } from "@/config";
 import {
   drawCanvas,
@@ -21,7 +23,9 @@ import {
   getClickText,
   splitContent,
   mitt,
+  downLoad,
   getContentArea,
+  getDownloadUri,
 } from "@/util";
 import type { Coordinate, DrawData } from "@/type";
 
@@ -58,7 +62,10 @@ const useHandleDraw = (
       history.storageDrawData();
       resetCanvas();
     };
-    const exportCannvas = () => {
+    const exportImage = () => {
+      if (history.data.length === 0) {
+        return;
+      }
       const canvas = document.createElement("canvas");
       const [x1, x2, y1, y2] = getContentArea(history.data);
       const exportWidth = x1 - x2 + EXPORT_GAP;
@@ -80,18 +87,49 @@ const useHandleDraw = (
         }))
       );
       const img = canvas.toDataURL();
-      const a = document.createElement("a");
-      a.download = "emodraw.png";
-      a.href = img;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      downLoad(img, EXPORT_IMAGE_NAME);
     };
 
-    mitt.on("export", exportCannvas);
+    const exportData = () => {
+      if (history.data.length === 0) {
+        return;
+      }
+      const uri = getDownloadUri(JSON.stringify(history.data));
+      downLoad(uri, EXPORT_DATA_NAME);
+    };
+
+    const importData = () => {
+      const input = document.createElement("input")!;
+      input.type = "file";
+      document.body.appendChild(input);
+      input.click();
+      input.onchange = (e: Event) => {
+        const target = e.target as HTMLInputElement;
+        const file = (target.files as FileList)[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const result = JSON.parse(
+              (event.target as FileReader).result as string
+            );
+            history.data = result;
+            history.revokeDrawData();
+            resetCanvas();
+          } catch (_) {}
+        };
+        reader.readAsText(file);
+        document.body.removeChild(input);
+      };
+    };
+
+    mitt.on("exportImage", exportImage);
+    mitt.on("exportData", exportData);
     mitt.on("clear", clearCanvas);
+    mitt.on("import", importData);
     return () => {
-      mitt.off("export", exportCannvas);
+      mitt.off("import", importData);
+      mitt.off("exportData", exportData);
+      mitt.off("exportImage", exportImage);
       mitt.off("clear", clearCanvas);
     };
   }, []);
