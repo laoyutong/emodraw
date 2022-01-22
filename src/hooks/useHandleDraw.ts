@@ -58,6 +58,7 @@ const useHandleDraw = (
 
   useEffect(() => {
     const clearCanvas = () => {
+      history.addOperateStack({ type: "DELETE", payload: history.data });
       history.data = [];
       history.storageDrawData();
       resetCanvas();
