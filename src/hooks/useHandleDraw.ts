@@ -48,12 +48,19 @@ const useHandleDraw = (
   const coordinateCache = useRef<Coordinate>({ x: 0, y: 0 });
   const lastResizeData = useRef<Coordinate>({ x: 0, y: 0 });
   const resizeDataCache = useRef<DrawData[]>([]);
+  const copyData = useRef<DrawData[]>([]);
+  const currentCoordinate = useRef<Coordinate>({ x: 0, y: 0 });
+  const isCreatingText = useRef(false);
 
   const resetCanvas = () => {
     if (canvasCtx.current) {
       canvasCtx.current.clearRect(0, 0, window.innerWidth, window.innerHeight);
       drawCanvas(canvasCtx.current);
     }
+  };
+
+  const resetSeleted = () => {
+    history.data.forEach((d) => (d.isSelected = false));
   };
 
   useEffect(() => {
@@ -133,6 +140,41 @@ const useHandleDraw = (
       mitt.off("exportData", exportData);
       mitt.off("exportImage", exportImage);
       mitt.off("clear", clearCanvas);
+    };
+  }, []);
+
+  useEffect(() => {
+    const copy = () => {
+      copyData.current = history.data.filter((d) => d.isSelected);
+    };
+    const paste = () => {
+      if (copyData.current.length > 0 && !isCreatingText.current) {
+        const [x1, x2, y1, y2] = getContentArea(copyData.current);
+        const [middleX, middleY] = [(x1 + x2) / 2, (y1 + y2) / 2];
+        const [distanceX, distanceY] = [
+          currentCoordinate.current.x - middleX,
+          currentCoordinate.current.y - middleY,
+        ];
+
+        resetSeleted();
+        copyData.current.forEach((d) => {
+          history.addDrawData({
+            ...d,
+            id: nanoid(),
+            x: d.x + distanceX,
+            y: d.y + distanceY,
+            isSelected: true,
+          });
+        });
+        history.storageDrawData();
+        resetCanvas();
+      }
+    };
+    document.addEventListener("copy", copy);
+    document.addEventListener("paste", paste);
+    return () => {
+      document.removeEventListener("copy", copy);
+      document.addEventListener("paste", paste);
     };
   }, []);
 
@@ -262,9 +304,11 @@ const useHandleDraw = (
   };
 
   const createText = ({ x, y }: Coordinate, initialValue?: string) => {
+    isCreatingText.current = true;
     createTextArea(
       { x, y },
       (v) => {
+        isCreatingText.current = false;
         if (v.trim()) {
           const lines = splitContent(v);
           let maxWidth = 0;
@@ -300,7 +344,7 @@ const useHandleDraw = (
   dblclickFn.current = (x: number, y: number) => {
     if (drawType === "selection") {
       const textElement = getClickText({ x, y });
-      history.data.forEach((d) => (d.isSelected = false));
+      resetSeleted();
       if (textElement) {
         history.data = history.data.filter((d) => d.id !== textElement.id);
         createText({ x: textElement.x, y: textElement.y }, textElement.content);
@@ -324,7 +368,7 @@ const useHandleDraw = (
       drawType === "selection" ? CURSOR_CONFIG.default : CURSOR_CONFIG.crosshair
     );
     if (drawType !== "selection") {
-      history.data.forEach((d) => (d.isSelected = false));
+      resetSeleted();
     }
   }, [drawType]);
 
@@ -393,7 +437,7 @@ const useHandleDraw = (
       }
 
       const id = getSelectionElement({ x: pageX, y: pageY });
-      history.data.forEach((d) => (d.isSelected = false));
+      resetSeleted();
       hasSelected.current = false;
       if (id) {
         history.data.find((d) => d.id === id)!.isSelected = true;
@@ -430,6 +474,7 @@ const useHandleDraw = (
   const mousemoveFn = useRef<MoveEventFn>();
   mousemoveFn.current = (e: MouseEvent) => {
     const { pageX, pageY } = e;
+    currentCoordinate.current = { x: pageX, y: pageY };
     // hover时改变cursor类型
     if (!canMousemove.current) {
       const rectType = getSelectionRectType({ x: pageX, y: pageY });
@@ -540,7 +585,7 @@ const useHandleDraw = (
       !selectedType.current &&
       !isSelection.current
     ) {
-      history.data.forEach((d) => (d.isSelected = false));
+      resetSeleted();
       const id = getSelectionElement({ x: pageX, y: pageY });
       if (id) {
         history.data.find((d) => d.id === id)!.isSelected = true;
