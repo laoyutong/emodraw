@@ -12,7 +12,7 @@ interface OperateStack {
 
 interface AddOperate {
   type: "ADD";
-  selectedIds: string;
+  selectedIds: string[];
 }
 
 interface DeleteOperate {
@@ -99,18 +99,18 @@ class History {
     if (this.#operateStack.length > 0) {
       const operate = this.#operateStack.pop()!;
       if (operate.type === "DELETE") {
-        this.data.push(...(operate.payload as DeleteOperate["payload"]));
+        this.data.push(...(operate as DeleteOperate).payload);
       }
       if (operate.type === "ADD") {
-        this.data = this.data.filter((d) => operate.selectedIds !== d.id);
+        this.data = this.data.filter(
+          (d) => !(operate as AddOperate).selectedIds.includes(d.id)
+        );
       }
       if (operate.type === "MOVE") {
-        const { x, y } = operate.payload as MoveOperate["payload"];
+        const { x, y } = (operate as MoveOperate).payload;
         this.data.forEach((d) => (d.isSelected = false));
         this.data
-          .filter((d) =>
-            (operate.selectedIds as MoveOperate["selectedIds"]).includes(d.id)
-          )
+          .filter((d) => (operate as MoveOperate).selectedIds.includes(d.id))
           .forEach((d) => {
             d.x -= x;
             d.y -= y;
@@ -118,14 +118,14 @@ class History {
           });
       }
       if (operate.type === "RESIZE") {
-        const selectedList = operate.payload as DeleteOperate["payload"];
+        const selectedList = (operate as DeleteOperate).payload;
         const selectedIds = selectedList.map((s) => s.id);
         this.data = this.data
           .filter((d) => !selectedIds.includes(d.id))
           .concat(selectedList);
       }
       if (operate.type === "SET") {
-        this.data = operate.payload as SetOperate["payload"];
+        this.data = (operate as DeleteOperate).payload;
       }
       this.storageDrawData();
     }

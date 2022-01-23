@@ -157,14 +157,21 @@ const useHandleDraw = (
         ];
 
         resetSeleted();
+        const selectedIds: string[] = [];
         copyData.current.forEach((d) => {
+          const newId = nanoid();
           history.addDrawData({
             ...d,
-            id: nanoid(),
+            id: newId,
             x: d.x + distanceX,
             y: d.y + distanceY,
             isSelected: true,
           });
+          selectedIds.push(newId);
+        });
+        history.addOperateStack({
+          type: "ADD",
+          selectedIds,
         });
         history.storageDrawData();
         resetCanvas();
@@ -331,7 +338,7 @@ const useHandleDraw = (
             height: lines.length * DEFAULT_FONT_SIZE,
             isSelected: false,
           });
-          history.addOperateStack({ type: "ADD", selectedIds: id });
+          history.addOperateStack({ type: "ADD", selectedIds: [id] });
           history.storageDrawData();
           resetCanvas();
         }
@@ -572,7 +579,7 @@ const useHandleDraw = (
       if (drawType !== "selection") {
         const activeData = history.data[history.data.length - 1];
         activeData.isSelected = true;
-        history.addOperateStack({ type: "ADD", selectedIds: activeData.id });
+        history.addOperateStack({ type: "ADD", selectedIds: [activeData.id] });
         setDrawType("selection");
       } else {
         // 范围selection
