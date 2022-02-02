@@ -4,6 +4,7 @@ import {
   SELECTION_GAP,
   CURSOR_CONFIG,
   TEXT_BOUND_GAP,
+  HAS_BOUND_LIST,
 } from "@/config";
 import type {
   Coordinate,
@@ -269,7 +270,7 @@ export const getTextBoundContainer = ({ x, y }: Coordinate) => {
     const middleX = d.x + d.width / 2;
     const middleY = d.y + d.height / 2;
     if (
-      ["rectangle", "circle", "diamond"].includes(d.type) &&
+      HAS_BOUND_LIST.includes(d.type) &&
       x <= middleX + TEXT_BOUND_GAP &&
       x >= middleX - TEXT_BOUND_GAP &&
       y <= middleY + TEXT_BOUND_GAP &&

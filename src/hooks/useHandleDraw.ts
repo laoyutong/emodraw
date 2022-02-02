@@ -318,6 +318,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     const container = containerId
       ? (history.data.find((d) => d.id === containerId) as GraghDrawData)
       : getTextBoundContainer(coordinate);
+    const id = nanoid();
 
     // TODO 逻辑复用
     if (container) {
@@ -326,11 +327,11 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         (v, height) => {
           isCreatingText.current = false;
           if (v.trim() && canvasCtx.current) {
-            let startIndex = 0;
-            const tempLine = splitContent(v);
             const lines: string[] = [];
+            const tempLine = splitContent(v);
             tempLine.forEach((line) => {
               let text = "";
+              let startIndex = 0;
               for (let i = 1; i <= line.length; i++) {
                 text = line.substring(startIndex, i);
                 const { width } = canvasCtx.current!.measureText(text);
@@ -349,7 +350,6 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
                 maxWidth = width;
               }
             });
-            const id = nanoid();
             const top = container.y + container.height / 2 - height / 2;
             history.addDrawData({
               type: "text",
@@ -360,6 +360,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
               width: maxWidth,
               height,
               isSelected: false,
+              isDeleted: false,
               containerId: container.id,
             });
             container.boundElement.push({ type: "text", id });
@@ -386,7 +387,6 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
                 }
               }
             });
-            const id = nanoid();
             history.addDrawData({
               type: "text",
               id,
@@ -396,6 +396,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
               width: maxWidth,
               height: lines.length * DEFAULT_FONT_SIZE,
               isSelected: false,
+              isDeleted: false,
               containerId: null,
             });
             history.addOperateStack({ type: "ADD", selectedIds: [id] });
@@ -525,6 +526,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           width: 0,
           height: 0,
           isSelected: false,
+          isDeleted: false,
         });
         resetCanvas();
       }
@@ -539,6 +541,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         width: 0,
         height: 0,
         isSelected: false,
+        isDeleted: false,
         boundElement: [],
       });
     }

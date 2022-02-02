@@ -32,3 +32,5 @@ export const EXPORT_GAP = 30;
 export const EXPORT_IMAGE_NAME = "emodraw.png";
 
 export const EXPORT_DATA_NAME = "emodraw";
+
+export const HAS_BOUND_LIST = ["rectangle", "circle", "diamond"];

@@ -1,6 +1,6 @@
-import { LOCAL_STORAGE_KEY } from "@/config";
+import { LOCAL_STORAGE_KEY, HAS_BOUND_LIST } from "@/config";
 import { getContentArea } from "./";
-import type { DrawData } from "@/type";
+import type { DrawData, GraghDrawData } from "@/type";
 
 type OperateType = "ADD" | "MOVE" | "RESIZE" | "DELETE" | "SET";
 
@@ -154,13 +154,23 @@ class History {
 
   delete() {
     const deleteList: DrawData[] = [];
-    this.data = this.data.filter((item) => {
-      if (item.isSelected) {
-        deleteList.push({ ...item, isSelected: false });
-        return false;
-      } else {
-        return true;
+    this.data.forEach((d) => {
+      if (d.isSelected) {
+        d.isDeleted = true;
+        if (HAS_BOUND_LIST.includes(d.type)) {
+          (d as GraghDrawData).boundElement.forEach((bound) => {
+            console.log(bound, this.data);
+            this.data.find((d) => d.id === bound.id)!.isDeleted = true;
+          });
+        }
       }
+    });
+    this.data = this.data.filter((d) => {
+      if (d.isDeleted) {
+        deleteList.push({ ...d, isSelected: false, isDeleted: false });
+        return false;
+      }
+      return true;
     });
     this.addOperateStack({ type: "DELETE", payload: deleteList });
     this.storageDrawData();

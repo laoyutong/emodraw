@@ -18,6 +18,7 @@ interface BaseDrawData {
   width: number;
   height: number;
   isSelected: boolean;
+  isDeleted: boolean;
 }
 
 export type DrawData =
