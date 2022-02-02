@@ -26,15 +26,14 @@ import {
   downLoad,
   getContentArea,
   getDownloadUri,
+  getTextBoundContainer,
+  createTextWithContainer,
 } from "@/util";
-import type { Coordinate, DrawData } from "@/type";
+import type { Coordinate, DrawData, GraghDrawData, TextDrawData } from "@/type";
 
 type MoveEventFn = (e: MouseEvent) => void;
 
-const useHandleDraw = (
-  canvasCtx: RefObject<CanvasRenderingContext2D>,
-  canvasIns: RefObject<HTMLCanvasElement>
-) => {
+const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const { drawType, setDrawType } = useContext(drawTypeContext);
   const { cursorType, setCursorType } = useContext(cursorTypeContext);
   const canMousemove = useRef(false);
@@ -310,41 +309,103 @@ const useHandleDraw = (
     });
   };
 
-  const createText = ({ x, y }: Coordinate, initialValue?: string) => {
+  const createText = (
+    coordinate: Coordinate,
+    containerId: string | null,
+    textElement?: TextDrawData
+  ) => {
     isCreatingText.current = true;
-    createTextArea(
-      { x, y },
-      (v) => {
-        isCreatingText.current = false;
-        if (v.trim()) {
-          const lines = splitContent(v);
-          let maxWidth = 0;
-          lines.forEach((line) => {
-            if (canvasCtx.current) {
-              const { width } = canvasCtx.current.measureText(line);
+    const container = containerId
+      ? (history.data.find((d) => d.id === containerId) as GraghDrawData)
+      : getTextBoundContainer(coordinate);
+
+    // TODO 逻辑复用
+    if (container) {
+      createTextWithContainer(
+        container,
+        (v, height) => {
+          isCreatingText.current = false;
+          if (v.trim() && canvasCtx.current) {
+            let startIndex = 0;
+            const tempLine = splitContent(v);
+            const lines: string[] = [];
+            tempLine.forEach((line) => {
+              let text = "";
+              for (let i = 1; i <= line.length; i++) {
+                text = line.substring(startIndex, i);
+                const { width } = canvasCtx.current!.measureText(text);
+                if (width > container.width) {
+                  lines.push(line.substring(startIndex, i - 1));
+                  startIndex = i - 1;
+                }
+              }
+              text && lines.push(text);
+            });
+
+            let maxWidth = 0;
+            lines.forEach((line) => {
+              const { width } = canvasCtx.current!.measureText(line);
               if (width > maxWidth) {
                 maxWidth = width;
               }
-            }
-          });
-          const id = nanoid();
-          history.addDrawData({
-            type: "text",
-            id,
-            x,
-            y,
-            content: v,
-            width: Math.floor(maxWidth),
-            height: lines.length * DEFAULT_FONT_SIZE,
-            isSelected: false,
-          });
-          history.addOperateStack({ type: "ADD", selectedIds: [id] });
-          history.storageDrawData();
-          resetCanvas();
-        }
-      },
-      initialValue
-    );
+            });
+            const id = nanoid();
+            const top = container.y + container.height / 2 - height / 2;
+            history.addDrawData({
+              type: "text",
+              id,
+              x: container.x + (container.width - maxWidth) / 2,
+              y: top,
+              content: lines.join("\n"),
+              width: maxWidth,
+              height,
+              isSelected: false,
+              containerId: container.id,
+            });
+            container.boundElement.push({ type: "text", id });
+            history.addOperateStack({ type: "ADD", selectedIds: [id] });
+            history.storageDrawData();
+            resetCanvas();
+          }
+        },
+        textElement
+      );
+    } else {
+      createTextArea(
+        coordinate,
+        (v) => {
+          isCreatingText.current = false;
+          if (v.trim()) {
+            const lines = splitContent(v);
+            let maxWidth = 0;
+            lines.forEach((line) => {
+              if (canvasCtx.current) {
+                const { width } = canvasCtx.current.measureText(line);
+                if (width > maxWidth) {
+                  maxWidth = width;
+                }
+              }
+            });
+            const id = nanoid();
+            history.addDrawData({
+              type: "text",
+              id,
+              x: coordinate.x,
+              y: coordinate.y,
+              content: v,
+              width: maxWidth,
+              height: lines.length * DEFAULT_FONT_SIZE,
+              isSelected: false,
+              containerId: null,
+            });
+            history.addOperateStack({ type: "ADD", selectedIds: [id] });
+            history.storageDrawData();
+            resetCanvas();
+          }
+        },
+        textElement?.content
+      );
+    }
   };
 
   const dblclickFn = useRef<(x: number, y: number) => void>();
@@ -354,9 +415,13 @@ const useHandleDraw = (
       resetSeleted();
       if (textElement) {
         history.data = history.data.filter((d) => d.id !== textElement.id);
-        createText({ x: textElement.x, y: textElement.y }, textElement.content);
+        createText(
+          { x: textElement.x, y: textElement.y },
+          textElement.containerId,
+          textElement
+        );
       } else {
-        createText({ x, y });
+        createText({ x, y }, null);
       }
       resetCanvas();
     }
@@ -416,7 +481,7 @@ const useHandleDraw = (
     coordinate.current = coordinateCache.current = { x: pageX, y: pageY };
     if (drawType === "text") {
       setDrawType("selection");
-      createText({ x: pageX, y: pageY });
+      createText({ x: pageX, y: pageY }, null);
     } else if (drawType === "selection") {
       canMousemove.current = true;
       // 批量移动选择元素
@@ -474,6 +539,7 @@ const useHandleDraw = (
         width: 0,
         height: 0,
         isSelected: false,
+        boundElement: [],
       });
     }
   };

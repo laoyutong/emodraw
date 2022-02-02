@@ -7,7 +7,13 @@ import {
   SELECTION_LINE_DASH,
 } from "@/config";
 import { history, splitContent } from "@/util";
-import type { DrawData, GraghDrawData, TextDrawData } from "@/type";
+import type {
+  DrawData,
+  GraghDrawData,
+  SelectionData,
+  TextDrawData,
+  ArrowDrawData,
+} from "@/type";
 
 const drawRect = (
   ctx: CanvasRenderingContext2D,
@@ -111,7 +117,7 @@ const drawArrow = (
 
 const drawGragh = (
   canvasCtx: CanvasRenderingContext2D,
-  drawData: GraghDrawData
+  drawData: GraghDrawData | ArrowDrawData | SelectionData
 ) => {
   const { type, x, y, width, height } = drawData;
   switch (type) {
@@ -143,11 +149,22 @@ const drawText = (
   canvasCtx: CanvasRenderingContext2D,
   drawData: TextDrawData
 ) => {
-  const { content, x, y } = drawData;
+  const { content, x, y, containerId, width } = drawData;
   canvasCtx.textBaseline = "bottom";
   canvasCtx.font = `${DEFAULT_FONT_SIZE}px  ${DEFAULT_FONT_FAMILY}`;
-  splitContent(content).forEach((line, index) => {
-    canvasCtx.fillText(line, x, y + DEFAULT_FONT_SIZE * (index + 1));
+  const lines = splitContent(content);
+  lines.forEach((line, index) => {
+    // 对于有container的text，需要居中绘制
+    if (containerId) {
+      const textWidth = canvasCtx.measureText(line).width;
+      canvasCtx.fillText(
+        line,
+        x + (width - textWidth) / 2,
+        y + DEFAULT_FONT_SIZE * (index + 1)
+      );
+    } else {
+      canvasCtx.fillText(line, x, y + DEFAULT_FONT_SIZE * (index + 1));
+    }
   });
 };
 

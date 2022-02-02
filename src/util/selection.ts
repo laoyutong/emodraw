@@ -1,6 +1,17 @@
 import { history } from "@/util";
-import { SELECTION_RECT_WIDTH, SELECTION_GAP, CURSOR_CONFIG } from "@/config";
-import type { Coordinate, CursorType, DrawData, TextDrawData } from "@/type";
+import {
+  SELECTION_RECT_WIDTH,
+  SELECTION_GAP,
+  CURSOR_CONFIG,
+  TEXT_BOUND_GAP,
+} from "@/config";
+import type {
+  Coordinate,
+  CursorType,
+  DrawData,
+  TextDrawData,
+  GraghDrawData,
+} from "@/type";
 
 const GAP = 5;
 
@@ -251,4 +262,31 @@ export const getContentArea = (
   });
 
   return [x1, x2, y1, y2];
+};
+export const getTextBoundContainer = ({ x, y }: Coordinate) => {
+  let result: GraghDrawData | null = null;
+  history.data.forEach((d) => {
+    const middleX = d.x + d.width / 2;
+    const middleY = d.y + d.height / 2;
+    if (
+      ["rectangle", "circle", "diamond"].includes(d.type) &&
+      x <= middleX + TEXT_BOUND_GAP &&
+      x >= middleX - TEXT_BOUND_GAP &&
+      y <= middleY + TEXT_BOUND_GAP &&
+      y >= middleY - TEXT_BOUND_GAP
+    ) {
+      if (result) {
+        if (d.width < result.width) {
+          result = d as GraghDrawData;
+        }
+      } else {
+        result = d as GraghDrawData;
+      }
+    }
+  });
+  return result;
+};
+
+const getArrowBoundContainer = () => {
+  // TODO
 };
