@@ -675,14 +675,14 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         isSelectedArea.current = false;
       }
     } else {
+      const activeData = history.data[history.data.length - 1];
       if (drawType !== "selection") {
-        const activeData = history.data[history.data.length - 1];
         activeData.isSelected = true;
         history.addOperateStack({ type: "ADD", selectedIds: [activeData.id] });
         setDrawType("selection");
       } else {
         // 范围selection
-        history.popDrawData();
+        activeData.type === "selection" && history.popDrawData();
       }
       resetCanvas();
     }
