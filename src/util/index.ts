@@ -10,5 +10,10 @@ export {
   getContentArea,
   getTextBoundContainer,
 } from "./selection";
-export { splitContent, getDownloadUri, downLoad } from "./helper";
+export {
+  splitContent,
+  getDownloadUri,
+  downLoad,
+  calculateText,
+} from "./helper";
 export { default as mitt } from "./mitt";

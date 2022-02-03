@@ -1,6 +1,10 @@
 import type { Coordinate, GraghDrawData, TextDrawData } from "@/type";
-import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from "@/config";
-import { splitContent } from ".";
+import {
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_SIZE,
+  TEXTAREA_PER_HEIGHT,
+} from "@/config";
+import { calculateText } from ".";
 
 const getTextArea = () => {
   const oldTextarea = document.querySelector("textarea");
@@ -71,9 +75,10 @@ export const createTextWithContainer = (
   }
 
   setTextAreaStyle(textarea, {
-    top: container.y + container.height / 2 - DEFAULT_FONT_SIZE + "px",
+    top: container.y + container.height / 2 - TEXTAREA_PER_HEIGHT + "px",
     left: container.x + "px",
     width: container.width + "px",
+    height: TEXTAREA_PER_HEIGHT + "px",
     textAlign: "center",
   });
 
@@ -86,13 +91,23 @@ export const createTextWithContainer = (
       container.y + container.height / 2 - textElement.height / 2 + "px";
   }
 
+  const calculateLinesNumber = () => {
+    const [lines] = calculateText(textarea.value, container.width);
+    return lines.length;
+  };
+
   addEventListener(textarea, {
     oninput: () => {
+      const length = calculateLinesNumber();
+      textarea.style.height = length * TEXTAREA_PER_HEIGHT + "px";
       textarea.style.top =
-        container.y + container.height / 2 - textarea.scrollHeight / 2 + "px";
+        container.y +
+        container.height / 2 -
+        (length * DEFAULT_FONT_SIZE) / 2 +
+        "px";
     },
     onChange: (value: string) => {
-      onChange(value, textarea.scrollHeight);
+      onChange(value, DEFAULT_FONT_SIZE * calculateLinesNumber());
     },
   });
 
@@ -102,18 +117,18 @@ export const createTextWithContainer = (
 export const createTextArea = (
   { x, y }: Coordinate,
   onChange: (value: string) => void,
-  initialValue?: string
+  textElement?: TextDrawData
 ) => {
   const textarea = getTextArea();
   if (!textarea) {
     return;
   }
 
-  if (initialValue) {
+  if (textElement) {
+    const initialValue = textElement.content;
     textarea.value = initialValue;
     textarea.setSelectionRange(0, initialValue.length);
-    textarea.style.height =
-      DEFAULT_FONT_SIZE * splitContent(initialValue).length + "px";
+    textarea.style.height = textElement.height + "px";
   }
 
   setTextAreaStyle(textarea, {

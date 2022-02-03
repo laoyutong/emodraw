@@ -28,6 +28,7 @@ import {
   getDownloadUri,
   getTextBoundContainer,
   createTextWithContainer,
+  calculateText,
 } from "@/util";
 import type { Coordinate, DrawData, GraghDrawData, TextDrawData } from "@/type";
 
@@ -327,29 +328,12 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         (v, height) => {
           isCreatingText.current = false;
           if (v.trim() && canvasCtx.current) {
-            const lines: string[] = [];
-            const tempLine = splitContent(v);
-            tempLine.forEach((line) => {
-              let text = "";
-              let startIndex = 0;
-              for (let i = 1; i <= line.length; i++) {
-                text = line.substring(startIndex, i);
-                const { width } = canvasCtx.current!.measureText(text);
-                if (width > container.width) {
-                  lines.push(line.substring(startIndex, i - 1));
-                  startIndex = i - 1;
-                }
-              }
-              text && lines.push(text);
-            });
+            const [lines, maxWidth] = calculateText(
+              v,
+              container.width,
+              canvasCtx.current
+            );
 
-            let maxWidth = 0;
-            lines.forEach((line) => {
-              const { width } = canvasCtx.current!.measureText(line);
-              if (width > maxWidth) {
-                maxWidth = width;
-              }
-            });
             const top = container.y + container.height / 2 - height / 2;
             history.addDrawData({
               type: "text",
@@ -404,7 +388,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
             resetCanvas();
           }
         },
-        textElement?.content
+        textElement
       );
     }
   };
@@ -416,6 +400,14 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       resetSeleted();
       if (textElement) {
         history.data = history.data.filter((d) => d.id !== textElement.id);
+        if (textElement.containerId) {
+          const container = history.data.find(
+            (d) => d.id === textElement.containerId
+          ) as GraghDrawData;
+          container.boundElement = container.boundElement.filter(
+            (d) => d.id !== textElement.id
+          );
+        }
         createText(
           { x: textElement.x, y: textElement.y },
           textElement.containerId,

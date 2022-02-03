@@ -4,6 +4,8 @@ export const DEFAULT_FONT_FAMILY = "Segoe UI Emoji";
 
 export const DEFAULT_FONT_SIZE = 15;
 
+export const TEXTAREA_PER_HEIGHT = DEFAULT_FONT_SIZE + 3;
+
 export const DEFAULT_BACKGROUND_COLOR = "#fff";
 
 export const CURSOR_CONFIG = {
