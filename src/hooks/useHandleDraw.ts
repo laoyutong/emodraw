@@ -19,6 +19,7 @@ import {
   isInSelectionArea,
   createTextArea,
   getSelectionElement,
+  getSelectionBoundTextElement,
   getSelectionArea,
   getSelectionRectType,
   getClickText,
@@ -313,15 +314,50 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     });
   };
 
-  const createText = (
-    coordinate: Coordinate,
-    containerId: string | null,
-    textElement?: TextDrawData
-  ) => {
+  const createText = (coordinate: Coordinate) => {
     isCreatingText.current = true;
-    const container = containerId
-      ? (history.data.find((d) => d.id === containerId) as GraghDrawData)
-      : getTextBoundContainer(coordinate);
+
+    let textElement = getClickText(coordinate);
+
+    let container: GraghDrawData | null = null;
+
+    if (textElement) {
+      const containerId = textElement.containerId;
+      if (containerId) {
+        container = history.data.find(
+          (d) => d.id === containerId
+        ) as GraghDrawData;
+        container.boundElement = container.boundElement.filter(
+          (d) => d.id !== textElement!.id
+        );
+      }
+    } else {
+      const containerId = getSelectionBoundTextElement(coordinate);
+      if (containerId) {
+        container = history.data.find(
+          (d) => d.id === containerId
+        ) as GraghDrawData;
+        const textBound = container.boundElement.find(
+          (b) => b.type === "text"
+        )!;
+        textElement = history.data.find(
+          (d) => d.id === textBound.id
+        ) as TextDrawData;
+        container.boundElement = container.boundElement.filter(
+          (d) => d.id !== textBound.id
+        );
+      }
+    }
+
+    if (textElement) {
+      history.data = history.data.filter((d) => d.id !== textElement!.id);
+      resetCanvas();
+    }
+
+    if (!container && !textElement) {
+      container = getTextBoundContainer(coordinate);
+    }
+
     const id = nanoid();
 
     // TODO 逻辑复用
@@ -329,6 +365,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
       createTextWithContainer(
         container,
         (v, height) => {
+          container = container as GraghDrawData;
           isCreatingText.current = false;
           if (v.trim() && canvasCtx.current) {
             const [lines, maxWidth] = calculateText(
@@ -359,8 +396,11 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         textElement
       );
     } else {
+      const textCoordinate = textElement
+        ? { x: textElement.x, y: textElement.y }
+        : coordinate;
       createTextArea(
-        coordinate,
+        textCoordinate,
         (v) => {
           isCreatingText.current = false;
           if (v.trim()) {
@@ -377,8 +417,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
             history.addDrawData({
               type: "text",
               id,
-              x: coordinate.x,
-              y: coordinate.y,
+              x: textCoordinate.x,
+              y: textCoordinate.y,
               content: v,
               width: maxWidth,
               height: lines.length * DEFAULT_FONT_SIZE,
@@ -399,27 +439,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
   const dblclickFn = useRef<(x: number, y: number) => void>();
   dblclickFn.current = (x: number, y: number) => {
     if (drawType === "selection") {
-      const textElement = getClickText({ x, y });
       resetSeleted();
-      if (textElement) {
-        history.data = history.data.filter((d) => d.id !== textElement.id);
-        if (textElement.containerId) {
-          const container = history.data.find(
-            (d) => d.id === textElement.containerId
-          ) as GraghDrawData;
-          container.boundElement = container.boundElement.filter(
-            (d) => d.id !== textElement.id
-          );
-        }
-        createText(
-          { x: textElement.x, y: textElement.y },
-          textElement.containerId,
-          textElement
-        );
-      } else {
-        createText({ x, y }, null);
-      }
-      resetCanvas();
+      createText({ x, y });
     }
   };
 
@@ -477,7 +498,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     coordinate.current = coordinateCache.current = { x: pageX, y: pageY };
     if (drawType === "text") {
       setDrawType("selection");
-      createText({ x: pageX, y: pageY }, null);
+      createText({ x: pageX, y: pageY });
     } else if (drawType === "selection") {
       canMousemove.current = true;
       // 批量移动选择元素

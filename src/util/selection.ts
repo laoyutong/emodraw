@@ -32,7 +32,10 @@ const getDistance = (x1: number, x2: number, y1: number, y2: number) =>
     1 / 2
   );
 
-const getSelectionBoundElement = ({ x, y }: Coordinate): string | null => {
+export const getSelectionBoundTextElement = ({
+  x,
+  y,
+}: Coordinate): string | null => {
   const hasBoundElement = history.data.filter(
     (d) =>
       HAS_BOUND_LIST.includes(d.type) &&
@@ -165,7 +168,7 @@ export const getSelectionElement = ({ x, y }: Coordinate): string | null => {
     }
   }
 
-  const id = getSelectionBoundElement({ x, y });
+  const id = getSelectionBoundTextElement({ x, y });
   if (id) {
     return id;
   }

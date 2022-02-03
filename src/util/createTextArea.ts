@@ -67,7 +67,7 @@ const addEventListener = (
 export const createTextWithContainer = (
   container: GraghDrawData,
   onChange: (value: string, height: number) => void,
-  textElement?: TextDrawData
+  textElement: TextDrawData | null
 ) => {
   const textarea = getTextArea();
   if (!textarea) {
@@ -117,7 +117,7 @@ export const createTextWithContainer = (
 export const createTextArea = (
   { x, y }: Coordinate,
   onChange: (value: string) => void,
-  textElement?: TextDrawData
+  textElement: TextDrawData | null
 ) => {
   const textarea = getTextArea();
   if (!textarea) {

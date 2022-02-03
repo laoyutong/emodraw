@@ -9,6 +9,7 @@ export {
   getClickText,
   getContentArea,
   getTextBoundContainer,
+  getSelectionBoundTextElement
 } from "./selection";
 export {
   splitContent,
