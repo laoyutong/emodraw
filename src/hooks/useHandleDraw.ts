@@ -11,6 +11,7 @@ import {
   EXPORT_GAP,
   EXPORT_DATA_NAME,
   EXPORT_IMAGE_NAME,
+  HAS_BOUND_LIST,
 } from "@/config";
 import {
   drawCanvas,
@@ -276,8 +277,10 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
         Math.abs(d.y + d.height - oppositePoint.y) / selectionHeight;
       d.x += (width - lastResizeData.current.x) * rateX;
       d.y += (height - lastResizeData.current.y) * rateY;
-      d.width += (width - lastResizeData.current.x) * (rateW - rateX);
-      d.height += (height - lastResizeData.current.y) * (rateH - rateY);
+      if (d.type !== "text") {
+        d.width += (width - lastResizeData.current.x) * (rateW - rateX);
+        d.height += (height - lastResizeData.current.y) * (rateH - rateY);
+      }
     });
 
     lastResizeData.current = { x: width, y: height };
@@ -566,6 +569,20 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
     // 移动、修改选择元素
     if (drawType === "selection" && hasSelected.current) {
       const selectedList = history.data.filter((d) => d.isSelected);
+
+      selectedList.forEach((selectedItem) => {
+        if (HAS_BOUND_LIST.includes(selectedItem.type)) {
+          const boundTextElement = (
+            selectedItem as GraghDrawData
+          ).boundElement.filter((b) => b.type === "text");
+          boundTextElement.forEach((textElement) => {
+            selectedList.push(
+              history.data.find((d) => d.id === textElement.id)!
+            );
+          });
+        }
+      });
+
       const isResize = ["nesw-resize", "nwse-resize"].includes(cursorType);
       if (isResize) {
         resizeElement(selectedList, pageX, pageY);

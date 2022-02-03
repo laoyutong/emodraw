@@ -32,9 +32,69 @@ const getDistance = (x1: number, x2: number, y1: number, y2: number) =>
     1 / 2
   );
 
+const getSelectionBoundElement = ({ x, y }: Coordinate): string | null => {
+  const hasBoundElement = history.data.filter(
+    (d) =>
+      HAS_BOUND_LIST.includes(d.type) &&
+      (d as GraghDrawData).boundElement.length !== 0
+  ) as GraghDrawData[];
+
+  for (let i = 0; i < hasBoundElement.length; i++) {
+    const element = hasBoundElement[i];
+    if (element.type === "rectangle") {
+      if (
+        x >= element.x - GAP &&
+        x <= element.x + element.width + GAP &&
+        y >= element.y - GAP &&
+        y <= element.y + element.height + GAP
+      ) {
+        return element.id;
+      }
+    }
+
+    if (element.type === "diamond") {
+      const targetArea = element.width * element.height;
+      const disX = Math.abs(x - (element.x + element.width / 2));
+      const disY = Math.abs(y - (element.y + element.height / 2));
+      const maxArea =
+        ((disX + GAP) * element.height + (disY + GAP) * element.width) * 2;
+      if (
+        x >= element.x - GAP &&
+        x <= element.x + element.width + GAP &&
+        y >= element.y - GAP &&
+        y <= element.y + element.height + GAP &&
+        maxArea <= targetArea
+      ) {
+        return element.id;
+      }
+    }
+
+    if (element.type === "circle") {
+      const centerX = element.x + element.width / 2;
+      const centerY = element.y + element.height / 2;
+      const a = element.width / 2;
+      const b = element.height / 2;
+      if (
+        Math.pow(x - centerX, 2) / Math.pow(a, 2) +
+          Math.pow(y - centerY, 2) / Math.pow(b, 2) <=
+        1
+      ) {
+        return element.id;
+      }
+    }
+  }
+
+  return null;
+};
+
 export const getSelectionElement = ({ x, y }: Coordinate): string | null => {
   for (let i = 0; i < history.data.length; i++) {
     const data = history.data[i];
+
+    if (data.type === "text" && data.containerId !== null) {
+      continue;
+    }
+
     const x1 = data.x;
     const x2 = data.x + data.width;
     const y1 = data.y;
@@ -84,15 +144,13 @@ export const getSelectionElement = ({ x, y }: Coordinate): string | null => {
     if (data.type === "circle") {
       const centerX = x1 + data.width / 2;
       const centerY = y1 + data.height / 2;
-      const lengthX = Math.abs(data.width / 2);
-      const lengthY = Math.abs(data.height / 2);
-      const step = lengthX > lengthY ? 1 / lengthX : 1 / lengthY;
-      for (let i = 0; i < Math.PI * 2; i += step) {
-        const x1 = Math.round(centerX + lengthX * Math.cos(i));
-        const y1 = Math.round(centerY + lengthY * Math.sin(i));
-        if (isRange(x, x1, getBigX(x1)) && isRange(y, y1, getBigY(y1))) {
-          return data.id;
-        }
+      const a = data.width / 2;
+      const b = data.height / 2;
+      const value =
+        Math.pow(x - centerX, 2) / Math.pow(a, 2) +
+        Math.pow(y - centerY, 2) / Math.pow(b, 2);
+      if (value <= 1.1 && value >= 0.9) {
+        return data.id;
       }
     }
 
@@ -106,6 +164,12 @@ export const getSelectionElement = ({ x, y }: Coordinate): string | null => {
       }
     }
   }
+
+  const id = getSelectionBoundElement({ x, y });
+  if (id) {
+    return id;
+  }
+
   return null;
 };
 
@@ -119,9 +183,13 @@ export const getSelectionArea = (
   const [maxY, minY] = height > 0 ? [y + height, y] : [y, y + height];
   return history.data
     .filter((data) => {
-      if (data.type === "selection") {
+      if (
+        data.type === "selection" ||
+        (data.type === "text" && data.containerId !== null)
+      ) {
         return false;
       }
+
       const [maxDataX, minDataX] =
         data.width > 0
           ? [data.x + data.width, data.x]
