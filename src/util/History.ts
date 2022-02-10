@@ -159,7 +159,6 @@ class History {
         d.isDeleted = true;
         if (HAS_BOUND_LIST.includes(d.type)) {
           (d as GraghDrawData).boundElement.forEach((bound) => {
-            console.log(bound, this.data);
             this.data.find((d) => d.id === bound.id)!.isDeleted = true;
           });
         }

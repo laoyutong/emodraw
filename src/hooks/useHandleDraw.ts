@@ -147,7 +147,23 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
 
   useEffect(() => {
     const copy = () => {
-      copyData.current = history.data.filter((d) => d.isSelected);
+      copyData.current = [];
+      history.data.forEach((d) => {
+        if (d.isSelected) {
+          copyData.current.push(d);
+          if (HAS_BOUND_LIST.includes(d.type)) {
+            const textBoundElement = (d as GraghDrawData).boundElement.find(
+              (b) => b.type === "text"
+            );
+            if (textBoundElement) {
+              const textElement = history.data.find(
+                (d) => d.id === textBoundElement.id
+              )!;
+              copyData.current.push(textElement);
+            }
+          }
+        }
+      });
     };
     const paste = () => {
       if (copyData.current.length > 0 && !isCreatingText.current) {
@@ -160,21 +176,47 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
 
         resetSeleted();
         const selectedIds: string[] = [];
+        const textBoundIdMap: Record<string, string> = {};
+        const pasteData: DrawData[] = [];
         copyData.current.forEach((d) => {
           const newId = nanoid();
-          history.addDrawData({
+          let isSelected = true;
+          if (d.type === "text" && d.containerId) {
+            textBoundIdMap[d.id] = newId;
+            isSelected = false;
+          }
+          pasteData.push({
             ...d,
             id: newId,
             x: d.x + distanceX,
             y: d.y + distanceY,
-            isSelected: true,
+            isSelected,
           });
           selectedIds.push(newId);
         });
+
+        pasteData
+          .filter((d) => HAS_BOUND_LIST.includes(d.type))
+          .forEach((d) => {
+            const textBoundElement = (d as GraghDrawData).boundElement.find(
+              (b) => b.type === "text"
+            );
+            if (textBoundElement) {
+              textBoundElement.id = textBoundIdMap[textBoundElement.id];
+              const textElement = pasteData.find(
+                (d) => d.id === textBoundElement.id
+              )!;
+              (textElement as TextDrawData).containerId = d.id;
+            }
+          });
+
+        pasteData.forEach((d) => history.addDrawData(d));
+
         history.addOperateStack({
           type: "ADD",
           selectedIds,
         });
+
         history.storageDrawData();
         resetCanvas();
       }
