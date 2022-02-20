@@ -1,5 +1,6 @@
 import { RefObject, useContext, useEffect, useRef } from "react";
 import { nanoid } from "nanoid";
+import { cloneDeep } from "lodash-es";
 
 import { useKeydown } from "./";
 import { drawTypeContext, cursorTypeContext } from "@/context";
@@ -186,7 +187,7 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
             isSelected = false;
           }
           pasteData.push({
-            ...d,
+            ...cloneDeep(d),
             id: newId,
             x: d.x + distanceX,
             y: d.y + distanceY,
@@ -194,6 +195,8 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           });
           selectedIds.push(newId);
         });
+
+        console.log("pasteData", pasteData);
 
         pasteData
           .filter((d) => HAS_BOUND_LIST.includes(d.type))
