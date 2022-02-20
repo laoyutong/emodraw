@@ -196,8 +196,6 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           selectedIds.push(newId);
         });
 
-        console.log("pasteData", pasteData);
-
         pasteData
           .filter((d) => HAS_BOUND_LIST.includes(d.type))
           .forEach((d) => {
@@ -214,6 +212,10 @@ const useHandleDraw = (canvasCtx: RefObject<CanvasRenderingContext2D>) => {
           });
 
         pasteData.forEach((d) => history.addDrawData(d));
+
+        if (pasteData.length > 1) {
+          isSelectedArea.current = true;
+        }
 
         history.addOperateStack({
           type: "ADD",
